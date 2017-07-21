@@ -131,6 +131,8 @@ class Painter(QtWidgets.QMainWindow):
 
     def startNewRound(self):
         self.currentWord = random.choice(words).title()
+        self.ui.timer.display(self.time)
+        self.clearImage()
         self.ui.category.setText(self.currentWord)
         t = Thread(target=self.countdown)
         t.start()
@@ -147,8 +149,6 @@ class Painter(QtWidgets.QMainWindow):
             self.changeGuess(random.choice(words).title())
             self.ui.timer.display(i)
         print("Ende")
-        self.ui.timer.display(self.time)
-        self.clearImage()
 
     def clearImage(self):
         self.cw.clearImage()
