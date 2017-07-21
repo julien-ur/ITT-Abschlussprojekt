@@ -9,7 +9,7 @@ p1 = QtCore.QPoint(0, 0)
 p2 = QtCore.QPoint(400, 400)
 
 words = []
-# Reduced Categories
+# Reduced Categories for Testing
 with open('categories.txt') as f:
     words = f.read().split()
 
