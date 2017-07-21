@@ -25,7 +25,11 @@ class ScribbleArea(QtWidgets.QWidget):
         self.myPenColor = QtCore.Qt.blue
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
+        # Deactivate during debug
+        #self.gameStart = False
 
+    def setStartPoint(self, startPoint):
+        self.lastPoint = startPoint
 
     def setPenColor(self, newColor):
         self.myPenColor = newColor
@@ -38,6 +42,7 @@ class ScribbleArea(QtWidgets.QWidget):
         self.modified = True
         self.update()
 
+    # Just to Test Drawing####
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.lastPoint = event.pos()
@@ -51,6 +56,8 @@ class ScribbleArea(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton and self.scribbling:
             self.drawLineTo(event.pos())
             self.scribbling = False
+
+    ###############################
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -111,13 +118,17 @@ class ScribbleArea(QtWidgets.QWidget):
         return self.myPenWidth
 
 
-
 class Painter(QtWidgets.QMainWindow):
     def __init__(self):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
         self.time = 5
         self.currentWord = ""
+        self.gameRunning = True
+        self.roundWon = False
+        self.currentTeam = 1
+        self.scoreTeamOne = 0
+        self.scoreTeamTwo = 0
         self.guess = ""
         self.initUI()
         self.cw = ScribbleArea(self.ui.frame)
@@ -128,14 +139,25 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.clear.clicked.connect(self.clearImage)
         self.ui.startGame.clicked.connect(self.startNewRound)
         self.ui.timer.display(self.time)
+        self.ui.team1Score.display(self.scoreTeamOne)
+        self.ui.team2Score.display(self.scoreTeamTwo)
 
     def startNewRound(self):
-        self.currentWord = random.choice(words).title()
-        self.ui.timer.display(self.time)
-        self.clearImage()
-        self.ui.category.setText(self.currentWord)
-        t = Thread(target=self.countdown)
-        t.start()
+        if self.gameRunning:
+            self.roundWon = False
+            self.currentWord = random.choice(words).title()
+            self.ui.timer.display(self.time)
+            self.clearImage()
+            self.ui.category.setText(self.currentWord)
+
+            # Call to draw Line
+            #self.cw.setStartPoint(QtCore.QPoint(20,40))
+            #self.cw.drawLineTo(QtCore.QPoint(200,200))
+            #self.cw.drawLineTo(QtCore.QPoint(300,400))
+            #
+
+            t = Thread(target=self.countdown)
+            t.start()
 
     # Just for testing
     def changeGuess(self, guess):
@@ -145,10 +167,45 @@ class Painter(QtWidgets.QMainWindow):
     def countdown(self):
         x = self.time-1
         for i in range(x, -1, -1):
-            time.sleep(1)
-            self.changeGuess(random.choice(words).title())
-            self.ui.timer.display(i)
-        print("Ende")
+            if not self.roundWon:
+                time.sleep(1)
+                self.changeGuess(random.choice(words).title())
+                self.ui.timer.display(i)
+                self.checkGuessing()
+            else:
+                print("Winner")
+                break
+        self.processEndRound()
+        print("Round End")
+
+    # Todo: Just for Testing / Find better solution!
+    def processEndRound(self):
+        if self.roundWon:
+            if self.currentTeam == 1:
+                self.scoreTeamOne += 1
+                self.ui.team1Score.display(self.scoreTeamOne)
+            else:
+                self.scoreTeamTwo += 1
+                self.ui.team2Score.display(self.scoreTeamTwo)
+
+        if self.currentTeam == 1:
+            self.currentTeam = 2
+        else:
+            self.currentTeam = 1
+
+        self.checkGameEnd()
+
+    def checkGameEnd(self):
+        if self.scoreTeamOne == 3:
+            print("Game End, Team 1 won")
+            self.gameRunning = False
+        elif self.scoreTeamTwo == 3:
+            print("Game End, Team 2 won")
+            self.gameRunning = False
+
+    def checkGuessing(self):
+        if self.guess == self.currentWord:
+            self.roundWon = True
 
     def clearImage(self):
         self.cw.clearImage()
@@ -160,8 +217,6 @@ class Painter(QtWidgets.QMainWindow):
 
     def setKIGuess(self):
         print("Guess:")
-
-
 
 
 def main():
