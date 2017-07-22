@@ -1,9 +1,9 @@
-import sys, random
+import sys, random, sched, time
 from threading import Thread
+import numpy as np
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPen, qRgb
-import sched, time
+from PyQt5.QtGui import qRgb
 
 p1 = QtCore.QPoint(0, 0)
 p2 = QtCore.QPoint(400, 400)
@@ -65,6 +65,25 @@ class ScribbleArea(QtWidgets.QWidget):
         self.image.fill(QtGui.qRgb(255, 255, 255))
         self.modified = True
         self.update()
+
+    # Vll undo? Saves the current painter state (pushes the state onto a stack). A save() must be followed by a corresponding restore(); the end() function unwinds the stack.
+    def saveImage(self, fileName, fileFormat):
+        visibleImage = self.image
+        self.resizeImage(visibleImage, self.size())
+
+        #ptr = visibleImage.bits()
+        #ptr.setsize(visibleImage.byteCount())
+        #arr = np.asarray(ptr).reshape(visibleImage.height(), visibleImage.width(), 4)
+        #print(arr)
+        #print(QtGui.QImageWriter.supportedImageFormats())
+
+
+
+        if visibleImage.save(fileName, fileFormat):
+            self.modified = False
+            return True
+        else:
+            return False
 
     # Just to Test Drawing####
     def mousePressEvent(self, event):
@@ -152,7 +171,7 @@ class ScribbleArea(QtWidgets.QWidget):
 class Painter(QtWidgets.QMainWindow):
     def __init__(self):
         super(Painter, self).__init__()
-        self.ui = uic.loadUi("DrawGame1.ui", self)
+        self.ui = uic.loadUi("DrawGame.ui", self)
         self.time = 60
         self.currentWord = ""
         self.gameRunning = True
@@ -194,7 +213,7 @@ class Painter(QtWidgets.QMainWindow):
 
     def startNewRound(self):
         if self.gameRunning:
-
+            self.saveFile('png')
             # Change icon above Team
             if self.currentTeam == 1:
                 self.currentTeam = 2
@@ -267,6 +286,11 @@ class Painter(QtWidgets.QMainWindow):
 
     def clearImage(self):
         self.cw.clearImage()
+
+    def saveFile(self, fileFormat):
+        return self.cw.saveImage("test", fileFormat)
+
+        return False
 
     def setNewColor(self):
         col = QtWidgets.QColorDialog.getColor()
