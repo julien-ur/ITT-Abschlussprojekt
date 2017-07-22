@@ -178,15 +178,10 @@ class WiimoteNode(Node):
             ir_points.append(ir_point)
             ir_points.append(ir_point)
 
-        #print("raw", ir_points)
-        if(len(ir_points) == 4):
+        if len(ir_points) == 4:
             ir_points = self.sort_tracking_points(ir_points)
-        #print("ordered", ir_points)
-        '''
-        if (len(ir_points) == 4):
-        drawing_point = self.calc_drawing_point(ir_points)
-        ir_points.append(drawing_point)
-        '''
+            drawing_point = self.calc_drawing_point(ir_points)
+            ir_points.append(drawing_point)
 
         return {'accelX': np.array([x_accel]), 'accelY': np.array([y_accel]), 'accelZ': np.array([z_accel]),
                 'ir_points': np.array(ir_points)}
@@ -301,66 +296,82 @@ class WiimoteNode(Node):
         return list(seen_twice)
 
     def calc_drawing_point(self, ir_points):
-        sx1 = ir_points[0][0]
-        sy1 = ir_points[0][1]
-        sx2 = ir_points[1][0]
-        sy2 = ir_points[1][1]
-        sx3 = ir_points[2][0]
-        sy3 = ir_points[2][1]
-        sx4 = ir_points[3][0]
-        sy4 = ir_points[3][1]
+        sx1, sy1 = ir_points[0]
+        sx2, sy2 = ir_points[1]
+        sx3, sy3 = ir_points[2]
+        sx4, sy4 = ir_points[3]
 
-        ## Step 1 ##
+        # Step 1
         source_points_123 = pl.matrix([[sx1, sx2, sx3],
-                                    [sy1, sy2, sy3],
-                                    [1, 1, 1]])
+                                       [sy1, sy2, sy3],
+                                       [1, 1, 1]])
         source_point_4 = [[sx4],
                           [sy4],
                           [1]]
         scale_to_source = pl.solve(source_points_123, source_point_4)
 
-        ## Step 2 ##
+        # Step 2
         l, m, t = [float(x) for x in scale_to_source]
         unit_to_source = pl.matrix([[l * sx1, m * sx2, t * sx3],
-                                 [l * sy1, m * sy2, t * sy3],
-                                 [l * 1, m * 1, t * 1]])
+                                    [l * sy1, m * sy2, t * sy3],
+                                    [l * 1, m * 1, t * 1]])
 
-        ## Step 3 ##
+        # Step 3
         DEST_W = 800
         DEST_H = 500
-        dx1, dy1 = 0, 0
-        dx2, dy2 = DEST_W, 0
-        dx3, dy3 = DEST_W, DEST_H
-        dx4, dy4 = 0, DEST_H
-        dcoords = [(dx1, dy1), (dx2, dy2), (dx3, dy3), (dx4, dy4)]
+
+        # we adjust the destination rectangle in order to use the whole ir sensor area for drawing
+        rectangle_long_side_dist = math.hypot(sx2 - sx1, sy2 - sy1)
+        rectangle_short_side_dist = math.hypot(sx3 - sx2, sy3 - sy2)
+
+        rectangle_to_sensor_diff_x = (self.IR_CAM_X - rectangle_long_side_dist)
+        rectangle_to_sensor_diff_y = (self.IR_CAM_Y - rectangle_short_side_dist)
+
+        origin_x = rectangle_to_sensor_diff_x/2 - rectangle_long_side_dist/2
+        origin_y = rectangle_to_sensor_diff_y/2 - rectangle_short_side_dist/2
+
+        max_x = DEST_W - origin_x
+        max_y = DEST_H - origin_y
+        '''
+        print("IR", self.IR_CAM_X, self.IR_CAM_Y)
+        print("rectangle", rectangle_long_side_dist, rectangle_short_side_dist)
+        print("diff", rectangle_to_sensor_diff_x, rectangle_to_sensor_diff_y)
+        print("origin", origin_x, origin_y)
+        print("dest", DEST_W, DEST_H)
+        '''
+        dx1, dy1 = origin_x, origin_y
+        dx2, dy2 = max_x, origin_y
+        dx3, dy3 = max_x, max_y
+        dx4, dy4 = origin_x, max_y
+
         dest_points_123 = pl.matrix([[dx1, dx2, dx3],
-                                  [dy1, dy2, dy3],
-                                  [1, 1, 1]])
+                                     [dy1, dy2, dy3],
+                                     [1, 1, 1]])
         dest_point_4 = pl.matrix([[dx4],
-                               [dy4],
-                               [1]])
+                                  [dy4],
+                                  [1]])
         scale_to_dest = pl.solve(dest_points_123, dest_point_4)
         l, m, t = [float(x) for x in scale_to_dest]
         unit_to_dest = pl.matrix([[l * dx1, m * dx2, t * dx3],
-                               [l * dy1, m * dy2, t * dy3],
-                               [l * 1, m * 1, t * 1]])
+                                  [l * dy1, m * dy2, t * dy3],
+                                  [l * 1, m * 1, t * 1]])
 
-        ## Step 4 ##
+        # Step 4
         source_to_unit = pl.inv(unit_to_source)
 
-        ## Step 5 ##
+        # Step 5
         source_to_dest = unit_to_dest @ source_to_unit
 
-        ## Step 6 ##
-        x, y, z = [float(w) for w in (source_to_dest @ pl.matrix([[512],
-                                                               [384],
-                                                               [1]]))]
-        ## Step 7: dehomogenization ##
+        # Step 6
+        x, y, z = [float(w) for w in (source_to_dest @ pl.matrix([[self.IR_CAM_X/2],
+                                                                  [self.IR_CAM_Y/2],
+                                                                  [1]]))]
+        # Step 7: dehomogenization
         x = x / z
         y = y / z
 
-        # print(x, y)
-        return (x, y)
+        print("drawing point", x, y)
+        return x, y
 
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
