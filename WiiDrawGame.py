@@ -195,6 +195,7 @@ class Painter(QtWidgets.QMainWindow):
     def startNewRound(self):
         if self.gameRunning:
 
+            # Change icon above Team
             if self.currentTeam == 1:
                 self.currentTeam = 2
                 self.ui.redTeam.hide()
