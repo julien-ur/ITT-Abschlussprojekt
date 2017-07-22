@@ -13,6 +13,19 @@ words = []
 with open('categories.txt') as f:
     words = f.read().split()
 
+class InsertLine(QtWidgets.QUndoCommand):
+    def __init__(self, line, arrayList):
+            super().__init__()
+            self.line = line
+            self.arrayList = arrayList
+    def undo(self):
+        self.arrayList.pop()
+
+    def redo(self):
+        self.arrayList.append(self.line)
+
+
+
 class ScribbleArea(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
@@ -26,6 +39,16 @@ class ScribbleArea(QtWidgets.QWidget):
         self.myPenColor = QtCore.Qt.blue
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
+        self.stack = QtWidgets.QUndoStack()
+        self.lineList = []
+
+        # Undo Test
+        #self.undo = QtWidgets.QPushButton("undo", self)
+        #self.undo.clicked.connect(self.stack.undo)
+        #self.redo = QtWidgets.QPushButton("redo", self)
+        #self.redo.clicked.connect(self.stack.redo)
+        #self.redo.move(0, 50)
+
         # Deactivate during debug
         #self.gameStart = False
 
@@ -78,7 +101,14 @@ class ScribbleArea(QtWidgets.QWidget):
         painter = QtGui.QPainter(self.image)
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth, QtCore.Qt.SolidLine,
                 QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
-        painter.drawLine(self.lastPoint, endPoint)
+        self.line = QtCore.QLine(self.lastPoint, endPoint)
+        command = InsertLine(self.line, self.lineList)
+        self.stack.push(command)
+
+        # Undo Test with Array
+        #print(len(self.lineList))
+
+        painter.drawLine(self.line)
         self.modified = True
 
         rad = self.myPenWidth / 2 + 2
@@ -122,12 +152,13 @@ class ScribbleArea(QtWidgets.QWidget):
 class Painter(QtWidgets.QMainWindow):
     def __init__(self):
         super(Painter, self).__init__()
-        self.ui = uic.loadUi("DrawGame.ui", self)
-        self.time = 5
+        self.ui = uic.loadUi("DrawGame1.ui", self)
+        self.time = 60
         self.currentWord = ""
         self.gameRunning = True
         self.roundWon = False
-        self.currentTeam = 1
+        self.roundRunning = False
+        self.currentTeam = 2
         self.scoreTeamOne = 0
         self.scoreTeamTwo = 0
         self.guess = ""
@@ -135,21 +166,50 @@ class Painter(QtWidgets.QMainWindow):
         self.cw = ScribbleArea(self.ui.frame)
         self.show()
 
+
     def initUI(self):
         self.ui.color.clicked.connect(self.setNewColor)
         self.ui.clear.clicked.connect(self.clearImage)
+        self.ui.startButton.clicked.connect(self.startGaming)
         self.ui.startGame.clicked.connect(self.startNewRound)
+        self.ui.endGame.clicked.connect(self.endGaming)
         self.ui.timer.display(self.time)
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
+        self.ui.blueTeam.hide()
+
+    def startGaming(self):
+        self.ui.title.hide()
+        self.ui.startButton.hide()
+        self.ui.startScreen.lower()
+        self.ui.secondText.hide()
+        self.time = int(self.ui.selectSeconds.value())
+        self.ui.timer.display(self.time)
+        self.ui.selectSeconds.hide()
+        self.ui.secondsSlider.hide()
+
+    def endGaming(self):
+        print("Ende")
+        #sys.exit()
 
     def startNewRound(self):
         if self.gameRunning:
+
+            if self.currentTeam == 1:
+                self.currentTeam = 2
+                self.ui.redTeam.hide()
+                self.ui.blueTeam.show()
+            else:
+                self.currentTeam = 1
+                self.ui.redTeam.show()
+                self.ui.blueTeam.hide()
+
             self.roundWon = False
+            self.roundRunning = True
             self.currentWord = random.choice(words).title()
             self.ui.timer.display(self.time)
-            self.clearImage()
             self.ui.category.setText(self.currentWord)
+            self.clearImage()
 
             # Call to draw Line
             #self.cw.setStartPoint(QtCore.QPoint(20,40))
@@ -184,16 +244,11 @@ class Painter(QtWidgets.QMainWindow):
         if self.roundWon:
             if self.currentTeam == 1:
                 self.scoreTeamOne += 1
-                self.ui.team1Score.display(self.scoreTeamOne)
             else:
                 self.scoreTeamTwo += 1
-                self.ui.team2Score.display(self.scoreTeamTwo)
 
-        if self.currentTeam == 1:
-            self.currentTeam = 2
-        else:
-            self.currentTeam = 1
-
+        self.ui.team1Score.display(self.scoreTeamOne)
+        self.ui.team2Score.display(self.scoreTeamTwo)
         self.checkGameEnd()
 
     def checkGameEnd(self):
@@ -203,6 +258,7 @@ class Painter(QtWidgets.QMainWindow):
         elif self.scoreTeamTwo == 3:
             print("Game End, Team 2 won")
             self.gameRunning = False
+        self.roundRunning = False
 
     def checkGuessing(self):
         if self.guess == self.currentWord:
