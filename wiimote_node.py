@@ -61,11 +61,9 @@ class WiimoteNode(Node):
             'accelX': dict(io='out'),
             'accelY': dict(io='out'),
             'accelZ': dict(io='out'),
-            'ir_point_0': dict(io='out')
         }
         self.wiimote = None
         self._acc_vals = []
-        self._ir_data = []
 
         # Configuration UI
         self.ui = QtGui.QWidget()
@@ -75,7 +73,7 @@ class WiimoteNode(Node):
         self.layout.addWidget(label)
 
         self.text = QtGui.QLineEdit()
-        self.btaddr = "18:2a:7b:f4:bc:65"  # set some example
+        self.btaddr = "18:2A:7B:F4:BC:65"  # set some example
         self.text.setText(self.btaddr)
         self.layout.addWidget(self.text)
 
@@ -85,7 +83,7 @@ class WiimoteNode(Node):
         self.update_rate_input = QtGui.QSpinBox()
         self.update_rate_input.setMinimum(0)
         self.update_rate_input.setMaximum(60)
-        self.update_rate_input.setValue(60)
+        self.update_rate_input.setValue(20)
         self.update_rate_input.valueChanged.connect(self.set_update_rate)
         self.layout.addWidget(self.update_rate_input)
 
@@ -105,16 +103,11 @@ class WiimoteNode(Node):
         if self.wiimote is None:
             return
         self._acc_vals = self.wiimote.accelerometer
-        self._ir_data = self.wiimote.ir
         # todo: other sensors...
         self.update()
 
     def update_accel(self, acc_vals):
         self._acc_vals = acc_vals
-        self.update()
-
-    def update_ir(self, ir_data):
-        self._ir_data = ir_data
         self.update()
 
     def ctrlWidget(self):
@@ -140,32 +133,13 @@ class WiimoteNode(Node):
         if rate == 0:  # use callbacks for max. update rate
             self.update_timer.stop()
             self.wiimote.accelerometer.register_callback(self.update_accel)
-            self.wiimote.ir.register_callback(self.update_ir)
         else:
-            self.wiimote.ir.unregister_callback(self.update_ir)
             self.wiimote.accelerometer.unregister_callback(self.update_accel)
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
         x, y, z = self._acc_vals
-        if len(self._ir_data) > 0:
-            ir_x = self._ir_data[0]['x']
-            ir_y = self._ir_data[0]['y']
-            ir_point = (ir_x, ir_y)
-            if len(self._ir_data) >1:
-                ir_x_2 = self._ir_data[1]['x']
-                ir_y_2 = self._ir_data[1]['y']
-                ir_point_2 = (ir_x_2, ir_y_2)
-            else:
-                ir_point_2 = ir_point
-            print(ir_point)
-        else:
-            ir_x = -1
-            ir_y = -1
-            ir_point = (ir_x, ir_y)
-            ir_point_2 = ir_point
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
-                'ir_point_0': np.array([ir_point, ir_point_2])}
+        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z])}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
@@ -188,21 +162,16 @@ if __name__ == '__main__':
 
     pw1 = pg.PlotWidget()
     layout.addWidget(pw1, 0, 1)
-    pw1.setXRange(0, 1024)
-    pw1.setYRange(0, 768)
+    pw1.setYRange(0, 1024)
 
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)
 
     wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
-    plotCurveNode = fc.createNode('PlotCurve', pos=(300, 0), )
     bufferNode = fc.createNode('Buffer', pos=(150, 0))
 
-    #fc.connectTerminals(wiimoteNode['ir_point_0_x'], bufferNode['dataIn'])
-    #fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
-    #fc.connectTerminals(wiimoteNode['ir_point_0_x'], plotCurveNode['x'])
-    #fc.connectTerminals(wiimoteNode['ir_point_0_y'], plotCurveNode['y'])
-    fc.connectTerminals(wiimoteNode['ir_point_0'], pw1Node['In'])
+    fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
+    fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
 
     win.show()
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
