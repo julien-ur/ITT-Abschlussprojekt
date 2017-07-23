@@ -289,7 +289,6 @@ class Painter(QtWidgets.QMainWindow):
 
     def saveFile(self, fileFormat):
         return self.cw.saveImage("test", fileFormat)
-
         return False
 
     def setNewColor(self):
