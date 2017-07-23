@@ -10,8 +10,8 @@ p2 = QtCore.QPoint(400, 400)
 
 words = []
 # Reduced Categories for Testing
-with open('categories.txt') as f:
-    words = f.read().split()
+words = [line.rstrip('\n') for line in open('categories.txt')]
+print(words)
 
 class InsertLine(QtWidgets.QUndoCommand):
     def __init__(self, line, arrayList):
