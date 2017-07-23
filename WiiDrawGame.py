@@ -213,7 +213,7 @@ class Painter(QtWidgets.QMainWindow):
 
     def startNewRound(self):
         if self.gameRunning:
-            self.saveFile('png')
+            #self.saveFile('png')
             # Change icon above Team
             if self.currentTeam == 1:
                 self.currentTeam = 2
