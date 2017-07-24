@@ -16,6 +16,7 @@ if __name__ == '__main__':
             y = data_set['y']
             y_test = data_set['y_test']
             num_cat = len(set(y))
+            print(num_cat)
 
             # one hot encoding of category list
             # see https://www.quora.com/What-is-one-hot-encoding-and-when-is-it-used-in-data-science

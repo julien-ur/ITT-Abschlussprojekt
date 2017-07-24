@@ -13,6 +13,7 @@ import os
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
+from tflearn.layers.normalization import local_response_normalization
 
 
 # ImageGuesserCNN is a convolutional deep neural network
@@ -32,7 +33,7 @@ from tflearn.layers.estimator import regression
 
 class ITTDrawGuesserCNN:
     DEFAULT_CHECKPOINT_PATH = 'ITTDrawGuesser.tfl.ckpt'
-    DEFAULT_EPOCH = 100
+    DEFAULT_EPOCH = 1
     use_cpu_only = True
 
     def __init__(self, num_categories):
@@ -56,19 +57,35 @@ class ITTDrawGuesserCNN:
         graph = input_data(shape=[None, 28, 28, 1], data_preprocessing=pre_process_data)
 
         # Convolutional Layer 1: 32 nodes, 3x3 pixel filter size
-        graph = conv_2d(graph, 32, 3, activation='relu')
+        graph = conv_2d(graph, 32, 3, activation='relu', regularizer="L2")
 
         # Downsampling with 2x2 filter
         graph = max_pool_2d(graph, 2)
+
+        graph = local_response_normalization(graph)
 
         # Convolutional Layer 2: 64 nodes, 3x3 pixel filter size
-        graph = conv_2d(graph, 64, 3, activation='relu')
+        graph = conv_2d(graph, 64, 3, activation='relu', regularizer="L2")
 
         # Downsampling with 2x2 filter
         graph = max_pool_2d(graph, 2)
 
-        # Fully connected layer 1, 512 neurons
-        graph = fully_connected(graph, 1024, activation='relu')
+        graph = local_response_normalization(graph)
+
+        # Fully connected layer 1, 128 neurons
+        graph = fully_connected(graph, 128, activation='relu')
+
+        # Set dropout to 0.5; throwing away random data to prevent over-fitting
+        graph = dropout(graph, 0.5)
+
+        # Fully connected layer 2, 256 neurons
+        graph = fully_connected(graph, 256, activation='relu')
+
+        # Set dropout to 0.5; throwing away random data to prevent over-fitting
+        graph = dropout(graph, 0.5)
+
+        # Fully connected layer 2, 256 neurons
+        graph = fully_connected(graph, 512, activation='relu')
 
         # Set dropout to 0.5; throwing away random data to prevent over-fitting
         graph = dropout(graph, 0.5)

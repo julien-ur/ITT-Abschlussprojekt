@@ -11,9 +11,14 @@ from PIL import Image
 class QuickDrawHelper:
     def __init__(self):
         self.data_set = {}
+        self.label_dict = {0: 'ant',
+                           1: 'bee',
+                           2: 'camel',
+                           3: 'harp',
+                           4: 'submarine'}
 
     # Max samples per category
-    MAX_SAMPLES = 10000
+    MAX_SAMPLES = 20000
     TEST_SAMPLE_SIZE = 2000
 
     # Load data set from filepath
@@ -38,6 +43,8 @@ class QuickDrawHelper:
                     y.extend(cat)
                     x_test.extend(data_test)
                     y_test.extend(cat_test)
+                    self.label_dict[cat_id] = file
+                    print("loading file %s", file)
                     cat_id += 1
         except FileNotFoundError:
             print("File not found")
@@ -50,6 +57,16 @@ class QuickDrawHelper:
         self.data_set['y_test'] = y_test
 
         return self.data_set
+
+    def reshape_to_cnn_input_format(self, array):
+        return array.reshape([-1, 28, 28, 1])
+
+    def load_from_file(self, path):
+        data = np.load(path)
+        return data
+
+    def get_label(self, id):
+        return self.label_dict[id]
 
     def get_data_from_bitmap_arrays(self, arrays, cat_id):
         data = arrays[:self.MAX_SAMPLES]
