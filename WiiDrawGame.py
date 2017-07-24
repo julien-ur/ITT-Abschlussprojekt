@@ -5,13 +5,14 @@ import numpy as np
 from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport
 from PyQt5.QtGui import qRgb
 
+import qimage2ndarray
+
 p1 = QtCore.QPoint(0, 0)
 p2 = QtCore.QPoint(400, 400)
 
 words = []
 # Reduced Categories for Testing
 words = [line.rstrip('\n') for line in open('categories.txt')]
-print(words)
 
 class InsertLine(QtWidgets.QUndoCommand):
     def __init__(self, line, arrayList):
@@ -19,9 +20,11 @@ class InsertLine(QtWidgets.QUndoCommand):
             self.line = line
             self.arrayList = arrayList
     def undo(self):
+        print(len(self.arrayList))
         self.arrayList.pop()
 
     def redo(self):
+        print(len(self.arrayList))
         self.arrayList.append(self.line)
 
 
@@ -36,18 +39,19 @@ class ScribbleArea(QtWidgets.QWidget):
         self.modified = False
         self.scribbling = False
         self.myPenWidth = 1
-        self.myPenColor = QtCore.Qt.blue
+        self.myPenColor = QtCore.Qt.black
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
         self.stack = QtWidgets.QUndoStack()
         self.lineList = []
-
+        self.ba = QtCore.QByteArray()
+        self.buffer = QtCore.QBuffer()
         # Undo Test
-        #self.undo = QtWidgets.QPushButton("undo", self)
-        #self.undo.clicked.connect(self.stack.undo)
-        #self.redo = QtWidgets.QPushButton("redo", self)
-        #self.redo.clicked.connect(self.stack.redo)
-        #self.redo.move(0, 50)
+        self.undo = QtWidgets.QPushButton("undo", self)
+        self.undo.clicked.connect(self.stack.undo)
+        self.redo = QtWidgets.QPushButton("redo", self)
+        self.redo.clicked.connect(self.stack.redo)
+        self.redo.move(0, 50)
 
         # Deactivate during debug
         #self.gameStart = False
@@ -66,24 +70,9 @@ class ScribbleArea(QtWidgets.QWidget):
         self.modified = True
         self.update()
 
-    # Vll undo? Saves the current painter state (pushes the state onto a stack). A save() must be followed by a corresponding restore(); the end() function unwinds the stack.
-    def saveImage(self, fileName, fileFormat):
-        visibleImage = self.image
-        self.resizeImage(visibleImage, self.size())
-
-        #ptr = visibleImage.bits()
-        #ptr.setsize(visibleImage.byteCount())
-        #arr = np.asarray(ptr).reshape(visibleImage.height(), visibleImage.width(), 4)
-        #print(arr)
-        #print(QtGui.QImageWriter.supportedImageFormats())
-
-
-
-        if visibleImage.save(fileName, fileFormat):
-            self.modified = False
-            return True
-        else:
-            return False
+    def saveImage(self):
+        v = qimage2ndarray.recarray_view(self.image)
+        return v
 
     # Just to Test Drawing####
     def mousePressEvent(self, event):
@@ -213,7 +202,6 @@ class Painter(QtWidgets.QMainWindow):
 
     def startNewRound(self):
         if self.gameRunning:
-            #self.saveFile('png')
             # Change icon above Team
             if self.currentTeam == 1:
                 self.currentTeam = 2
