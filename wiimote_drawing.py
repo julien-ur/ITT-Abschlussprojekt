@@ -1,158 +1,110 @@
-#!/usr/bin/env python3
-# coding: utf-8
-# -*- coding: utf-8 -*-
-
-from pyqtgraph.flowchart import Flowchart, Node
-from pyqtgraph.flowchart.library.common import CtrlNode
-import pyqtgraph.flowchart.library as fclib
-from pyqtgraph.Qt import QtGui, QtCore
-import pyqtgraph as pg
+from PyQt5 import QtCore
 import pylab as pl
-import numpy as np
+import sys
+import time
+from threading import Timer,Thread,Event
 import math
 
 import wiimote
 
 
-class BufferNode(CtrlNode):
-    """
-    Buffers the last n samples provided on input and provides them as a list of
-    length n on output.
-    A spinbox widget allows for setting the size of the buffer.
-    Default size is 32 samples.
-    """
-    nodeName = "Buffer"
-    uiTemplate = [
-        ('size',  'spin', {'value': 32.0, 'step': 1.0, 'bounds': [0.0, 128.0]}),
-    ]
+# Source: https://stackoverflow.com/a/12435256
+class ProcessingThread(Thread):
+    def __init__(self, processing_function, update_rate, stop_event):
+        Thread.__init__(self)
+        self.stopped = stop_event
+        self.processing_function = processing_function
 
-    def __init__(self, name):
-        terminals = {
-            'dataIn': dict(io='in'),
-            'dataOut': dict(io='out'),
-        }
-        self._buffer = np.array([])
-        CtrlNode.__init__(self, name, terminals=terminals)
+        self.update_rate = update_rate
+        self.sleep_time = 0
 
-    def process(self, **kwds):
-        size = int(self.ctrls['size'].value())
-        self._buffer = np.append(self._buffer, kwds['dataIn'])
-        self._buffer = self._buffer[-size:]
-        output = self._buffer
-        return {'dataOut': output}
+    def run(self):
+        while not self.stopped.wait(self.sleep_time):
+            start = time.time()
+            self.processing_function()
+            end = time.time()
+            sleep_time = (1 / self.update_rate) - (end - start)
+            self.sleep_time = max(0, sleep_time)
 
-fclib.registerNodeType(BufferNode, [('Data',)])
-
-
-class WiimoteNode(Node):
-    """
-    Outputs sensor data from a Wiimote.
-
-    Supported sensors: accelerometer (3 axis)
-    Text input box allows for setting a Bluetooth MAC address.
-    Pressing the "connect" button tries connecting to the Wiimote.
-    Update rate can be changed via a spinbox widget. Setting it to "0"
-    activates callbacks every time a new sensor value arrives (which is
-    quite often -> performance hit)
-    """
-
-    nodeName = "Wiimote"
-
-    def __init__(self, name):
-        terminals = {
-            'accelX': dict(io='out'),
-            'accelY': dict(io='out'),
-            'accelZ': dict(io='out'),
-            'ir_points': dict(io='out')
-        }
-
+class WiimoteDrawing:
+    def __init__(self, btaddr="18:2a:7b:f4:bc:65", rate=60):
         self.IR_CAM_X = 1024
         self.IR_CAM_Y = 768
+
+        self.btaddr = btaddr  # "18:2a:7b:f4:bc:65"  # for development
+        self.update_rate = rate
 
         self.wiimote = None
         self._acc_vals = []
         self._ir_data = []
-
-        # Configuration UI
-        self.ui = QtGui.QWidget()
-        self.layout = QtGui.QGridLayout()
-
-        label = QtGui.QLabel("Bluetooth MAC address:")
-        self.layout.addWidget(label)
-
-        self.text = QtGui.QLineEdit()
-        self.btaddr = "18:2a:7b:f4:bc:65"  # set some example
-        self.text.setText(self.btaddr)
-        self.layout.addWidget(self.text)
-
-        label2 = QtGui.QLabel("Update rate (Hz)")
-        self.layout.addWidget(label2)
-
-        self.update_rate_input = QtGui.QSpinBox()
-        self.update_rate_input.setMinimum(0)
-        self.update_rate_input.setMaximum(60)
-        self.update_rate_input.setValue(60)
-        self.update_rate_input.valueChanged.connect(self.set_update_rate)
-        self.layout.addWidget(self.update_rate_input)
-
-        self.connect_button = QtGui.QPushButton("connect")
-        self.connect_button.clicked.connect(self.connect_wiimote)
-        self.layout.addWidget(self.connect_button)
-        self.ui.setLayout(self.layout)
+        self._callbacks = []
 
         # update timer
-        self.update_timer = QtCore.QTimer()
-        self.update_timer.timeout.connect(self.update_all_sensors)
+        self.update_time_stop_flag = Event()
+        self.update_timer = ProcessingThread(self.update_all_sensors, self.update_rate, self.update_time_stop_flag)
 
-        # super()
-        Node.__init__(self, name, terminals=terminals)
+        self.connect_wiimote()
 
     def update_all_sensors(self):
         if self.wiimote is None:
             return
         self._acc_vals = self.wiimote.accelerometer
         self._ir_data = self.wiimote.ir
-        # todo: other sensors...
-        self.update()
+        drawing_point = self.compute_drawing_point()
+        self._notify_callbacks(drawing_point)
 
     def update_accel(self, acc_vals):
         self._acc_vals = acc_vals
-        self.update()
 
     def update_ir(self, ir_data):
         self._ir_data = ir_data
-        self.update()
+        drawing_point = self.compute_drawing_point()
+        self._notify_callbacks(drawing_point)
 
-    def ctrlWidget(self):
-        return self.ui
-
-    def connect_wiimote(self):
-        self.btaddr = str(self.text.text()).strip()
-        if self.wiimote is not None:
-            self.wiimote.disconnect()
-            self.wiimote = None
-            self.connect_button.setText("connect")
-            return
+    def connect_wiimote(self, attempt=0):
         if len(self.btaddr) == 17:
-            self.connect_button.setText("connecting...")
-            self.wiimote = wiimote.connect(self.btaddr)
-            if self.wiimote is None:
-                self.connect_button.setText("try again")
-            else:
-                self.connect_button.setText("disconnect")
-                self.set_update_rate(self.update_rate_input.value())
+            print("connecting wiimote " + self.btaddr + "..")
+            try:
+                self.wiimote = wiimote.connect(self.btaddr)
+            except:
+                print(sys.exc_info())
 
-    def set_update_rate(self, rate):
-        if rate == 0:  # use callbacks for max. update rate
-            self.update_timer.stop()
-            self.wiimote.accelerometer.register_callback(self.update_accel)
+            if self.wiimote is None:
+                print("couldn't connect wiimote. tried it " + str(attempt) + " times")
+                time.sleep(3)
+                self.connect_wiimote(attempt+1)
+            else:
+                print("succesfully connected wiimote")
+                self.start_processing()
+        else:
+            print("bluetooth address has to be 17 characters long")
+            return
+
+    def register_callback(self, func):
+        self._callbacks.append(func)
+
+    def unregister_callback(self, func):
+        if func in self._callbacks:
+            self._callbacks.remove(func)
+
+    def _notify_callbacks(self):
+        for callback in self._callbacks:
+            callback(self._state)
+
+    def start_processing(self):
+        if self.update_rate == 0:  # use callbacks for max. update rate
+            self.update_time_stop_flag.set()
             self.wiimote.ir.register_callback(self.update_ir)
+            self.wiimote.accelerometer.register_callback(self.update_accel)
         else:
             self.wiimote.ir.unregister_callback(self.update_ir)
             self.wiimote.accelerometer.unregister_callback(self.update_accel)
-            self.update_timer.start(1000.0/rate)
+            self.update_timer.start()
 
-    def process(self, **kwdargs):
+    def compute_drawing_point(self):
+        if len(self._ir_data) is not 4:
+            return
+
         x_accel, y_accel, z_accel = self._acc_vals
         _min_accel = 410.0
         _max_accel = 610.0
@@ -162,29 +114,19 @@ class WiimoteNode(Node):
         #print('{:2f}'.format(x_accel_norm), '{:2f}'.format(z_accel_norm))
 
         ir_points = []
-        if len(self._ir_data) > 0:
-            for i in range(len(self._ir_data)):
-                ir_x = self._ir_data[i]['x']
-                ir_y = self._ir_data[i]['y']
-                ir_point = (ir_x, ir_y)
-                ir_points.append(ir_point)
-            #ir_points.append((self.IR_CAM_X/2, self.IR_CAM_Y/2))
-        else:
-            ir_x = -1
-            ir_y = -1
+        for i in range(len(self._ir_data)):
+            ir_x = self._ir_data[i]['x']
+            ir_y = self._ir_data[i]['y']
             ir_point = (ir_x, ir_y)
             ir_points.append(ir_point)
-            ir_points.append(ir_point)
-            ir_points.append(ir_point)
-            ir_points.append(ir_point)
 
-        if len(ir_points) == 4:
-            ir_points = self.sort_tracking_points(ir_points)
+        drawing_point = (-1, -1)
+
+        ir_points = self.sort_tracking_points(ir_points)
+        if ir_points:
             drawing_point = self.calc_drawing_point(ir_points)
-            ir_points.append(drawing_point)
 
-        return {'accelX': np.array([x_accel]), 'accelY': np.array([y_accel]), 'accelZ': np.array([z_accel]),
-                'ir_points': np.array(ir_points)}
+        return drawing_point
 
     def sort_tracking_points(self, ir_points):
         xmin, ymin = 100000, 100000
@@ -220,9 +162,9 @@ class WiimoteNode(Node):
         quadrant_num = 0 if (xmin_ymin_dist < xmin_ymax_dist) else 1
 
         if quadrant_num == 0:
-            sorted_tracking_points = [ymin_point, xmax_point, ymax_point, xmin_point]
+            sorted_tracking_points = [xmin_point, ymax_point, xmax_point, ymin_point]#[ymin_point, xmax_point, ymax_point, xmin_point]
         elif quadrant_num == 1:
-            sorted_tracking_points = [xmin_point, ymin_point, xmax_point, ymax_point]
+            sorted_tracking_points = [ymax_point, xmax_point, ymin_point, xmin_point]#[xmin_point, ymin_point, xmax_point, ymax_point]
 
         print("sorted", sorted_tracking_points)
 
@@ -317,8 +259,8 @@ class WiimoteNode(Node):
                                     [l * 1, m * 1, t * 1]])
 
         # Step 3
-        DEST_W = 800
-        DEST_H = 500
+        DEST_W = 1920
+        DEST_H = 1080
 
         # we adjust the destination rectangle in order to use the whole ir sensor area for drawing
         rectangle_long_side_dist = math.hypot(sx2 - sx1, sy2 - sy1)
@@ -374,43 +316,9 @@ class WiimoteNode(Node):
         return x, y
 
 
-fclib.registerNodeType(WiimoteNode, [('Sensor',)])
+
+def main():
+    draw = WiimoteDrawing()
 
 if __name__ == '__main__':
-    import sys
-    app = QtGui.QApplication([])
-    win = QtGui.QMainWindow()
-    win.setWindowTitle('WiimoteNode demo')
-    cw = QtGui.QWidget()
-    win.setCentralWidget(cw)
-    layout = QtGui.QGridLayout()
-    cw.setLayout(layout)
-
-    # Create an empty flowchart with a single input and output
-    fc = Flowchart(terminals={
-    })
-    w = fc.widget()
-
-    layout.addWidget(fc.widget(), 0, 0, 2, 1)
-
-    pw1 = pg.PlotWidget()
-    layout.addWidget(pw1, 0, 1)
-    pw1.setXRange(0, 1024)
-    pw1.setYRange(0, 768)
-
-    pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
-    pw1Node.setPlot(pw1)
-
-    wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
-    plotCurveNode = fc.createNode('PlotCurve', pos=(300, 0), )
-    bufferNode = fc.createNode('Buffer', pos=(150, 0))
-
-    #fc.connectTerminals(wiimoteNode['ir_point_0_x'], bufferNode['dataIn'])
-    #fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
-    #fc.connectTerminals(wiimoteNode['ir_point_0_x'], plotCurveNode['x'])
-    #fc.connectTerminals(wiimoteNode['ir_point_0_y'], plotCurveNode['y'])
-    fc.connectTerminals(wiimoteNode['ir_points'], pw1Node['In'])
-
-    win.show()
-    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-        QtGui.QApplication.instance().exec_()
+    main()
