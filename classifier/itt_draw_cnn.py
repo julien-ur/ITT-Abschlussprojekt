@@ -33,7 +33,7 @@ from tflearn.layers.normalization import local_response_normalization
 
 class ITTDrawGuesserCNN:
     DEFAULT_CHECKPOINT_PATH = 'ITTDrawGuesser.tfl.ckpt'
-    DEFAULT_EPOCH = 1
+    DEFAULT_EPOCH = 10
     use_cpu_only = True
 
     def __init__(self, num_categories):

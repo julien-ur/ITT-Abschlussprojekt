@@ -9,17 +9,16 @@ from PIL import Image
 
 # Helper class with functions for the quickdraw npy data
 class QuickDrawHelper:
-    def __init__(self):
-        self.data_set = {}
-        self.label_dict = {0: 'ant',
-                           1: 'bee',
-                           2: 'camel',
-                           3: 'harp',
-                           4: 'submarine'}
-
     # Max samples per category
     MAX_SAMPLES = 20000
     TEST_SAMPLE_SIZE = 2000
+    DICT_FILEPATH = 'cat_dict.txt'
+
+    def __init__(self):
+        self.data_set = {}
+        self.label_dict = {}
+
+
 
     # Load data set from filepath
     # Should be folder with npy files
@@ -34,7 +33,8 @@ class QuickDrawHelper:
         x_test = []
         y_test = []
         try:
-            for file in os.listdir(folder_path):
+            file_names = sorted(os.listdir(folder_path))
+            for file in file_names:
                 if file.endswith('.npy'):
                     npy_path = os.path.join(folder_path, file)
                     loaded_bitmap_arrays = np.load(npy_path)
@@ -43,7 +43,7 @@ class QuickDrawHelper:
                     y.extend(cat)
                     x_test.extend(data_test)
                     y_test.extend(cat_test)
-                    self.label_dict[cat_id] = file
+                    self.label_dict[cat_id] = file[:-4].replace('full_numpy_bitmap_', '')
                     print("loading file %s", file)
                     cat_id += 1
         except FileNotFoundError:
@@ -55,8 +55,13 @@ class QuickDrawHelper:
         self.data_set['y'] = y
         self.data_set['x_test'] = x_test
         self.data_set['y_test'] = y_test
-
+        self.write_cat_dict_to_file()
         return self.data_set
+
+    def write_cat_dict_to_file(self):
+        with open(self.DICT_FILEPATH, 'w') as dict_file:
+            dict_file.write(str(self.label_dict))
+
 
     def reshape_to_cnn_input_format(self, array):
         return array.reshape([-1, 28, 28, 1])
@@ -65,8 +70,11 @@ class QuickDrawHelper:
         data = np.load(path)
         return data
 
-    def get_label(self, id):
-        return self.label_dict[id]
+    def get_label(self, cat_id):
+        if len(self.label_dict) < 1:
+            dict_file = open(self.DICT_FILEPATH, 'r').read()
+            self.label_dict = eval(dict_file)
+        return self.label_dict[cat_id]
 
     def get_data_from_bitmap_arrays(self, arrays, cat_id):
         data = arrays[:self.MAX_SAMPLES]
