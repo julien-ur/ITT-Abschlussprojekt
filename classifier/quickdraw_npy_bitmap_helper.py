@@ -16,7 +16,8 @@ class QuickDrawHelper:
 
     def __init__(self):
         self.data_set = {}
-        self.label_dict = {}
+        dict_file = open(self.DICT_FILEPATH, 'r').read()
+        self.label_dict = eval(dict_file)
 
 
 
@@ -33,13 +34,13 @@ class QuickDrawHelper:
         x_test = []
         y_test = []
         try:
-            file_names = sorted(os.listdir(folder_path))
-            for file in file_names:
+            training_file_names = sorted(os.listdir(folder_path))
+            for file in training_file_names:
                 if file.endswith('.npy'):
                     npy_path = os.path.join(folder_path, file)
                     loaded_bitmap_arrays = np.load(npy_path)
-                    data, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays, cat_id)
-                    x.extend(data)
+                    data_training, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays, cat_id)
+                    x.extend(data_training)
                     y.extend(cat)
                     x_test.extend(data_test)
                     y_test.extend(cat_test)
@@ -62,7 +63,6 @@ class QuickDrawHelper:
         with open(self.DICT_FILEPATH, 'w') as dict_file:
             dict_file.write(str(self.label_dict))
 
-
     def reshape_to_cnn_input_format(self, array):
         return array.reshape([-1, 28, 28, 1])
 
@@ -70,11 +70,19 @@ class QuickDrawHelper:
         data = np.load(path)
         return data
 
-    def get_label(self, cat_id):
+    # Classifier_output: returned list from ITTDrawGuesserCNN.predict()
+    # Hacky reading of categories to use for prediction label, using eval on file-dumped dict
+    # Don't do funny business please :)
+    def get_label(self, classifier_output):
         if len(self.label_dict) < 1:
             dict_file = open(self.DICT_FILEPATH, 'r').read()
             self.label_dict = eval(dict_file)
+
+        cat_id = list(classifier_output[0]).index(max(classifier_output[0]))
         return self.label_dict[cat_id]
+
+    def get_num_categories(self):
+        return len(self.label_dict)
 
     def get_data_from_bitmap_arrays(self, arrays, cat_id):
         data = arrays[:self.MAX_SAMPLES]
@@ -86,23 +94,20 @@ class QuickDrawHelper:
 # Create png to look at the images/process them elsewhere
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("No filepath given")
+        print("No folder given")
         sys.exit(-1)
     else:
         try:
-            filepath = sys.argv[1]
-            carriers = np.load(filepath)
-            if QuickDrawHelper.MAX_SAMPLES < len(carriers):
-                sample_size = QuickDrawHelper.MAX_SAMPLES
-            else:
-                sample_size = len(carriers)
-            for i in range(sample_size):
-                plakat = Image.new('L', (28, 28))
-                plakat.putdata(carriers[i])
-
-                # directory name of current script
-                cwd = os.path.dirname(os.path.realpath(__file__))
-                save_location = os.path.join(cwd, r'TrainingData\Bananas\{}{}.png'.format(os.path.basename(filepath[:-4]), i))
-                plakat.save(save_location)
+            folder_path = sys.argv[1]
+            file_names = sorted(os.listdir(folder_path))
+            for file in file_names:
+                if file.endswith('.npy'):
+                    data = np.load(file)
+                    for i in range(QuickDrawHelper.MAX_SAMPLES):
+                        plakat = Image.new('L', (28, 28))
+                        plakat.putdata(data[i])
+                        image_name = file[:-4].replace('full_numpy_bitmap_', '')
+                        save_location = os.path.join('{}{}.png'.format(image_name, i))
+                        plakat.save(save_location)
         except FileNotFoundError:
             print("Check filepath")
