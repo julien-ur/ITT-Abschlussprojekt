@@ -8,6 +8,25 @@ import math
 import wiimote
 
 
+def connect_wiimote(self, btaddr="18:2a:7b:f4:bc:65", attempt=0):
+    if len(btaddr) == 17:
+        print("connecting wiimote " + btaddr + "..")
+        try:
+            self.wiimote = wiimote.connect(btaddr)
+        except:
+            print(sys.exc_info())
+
+        if self.wiimote is None:
+            print("couldn't connect wiimote. tried it " + str(attempt) + " times")
+            time.sleep(3)
+            self.connect_wiimote(attempt + 1)
+        else:
+            print("succesfully connected wiimote")
+            return WiimoteDrawing()
+    else:
+        print("bluetooth address has to be 17 characters long")
+        return None
+
 # Source: https://stackoverflow.com/a/12435256
 class ProcessingThread(Thread):
     def __init__(self, processing_function, update_rate, stop_event):
@@ -27,12 +46,14 @@ class ProcessingThread(Thread):
             self.sleep_time = max(0, sleep_time)
 
 class WiimoteDrawing:
-    def __init__(self, btaddr="18:2a:7b:f4:bc:65", rate=60):
+    def __init__(self):
+        self.DEST_W = 1920
+        self.DEST_H = 1080
+
         self.IR_CAM_X = 1024
         self.IR_CAM_Y = 768
 
-        self.btaddr = btaddr  # "18:2a:7b:f4:bc:65"  # for development
-        self.update_rate = rate
+        self.update_rate = 60
 
         self.wiimote = None
         self._acc_vals = []
@@ -42,8 +63,6 @@ class WiimoteDrawing:
         # update timer
         self.update_time_stop_flag = Event()
         self.update_timer = ProcessingThread(self.update_all_sensors, self.update_rate, self.update_time_stop_flag)
-
-        self.connect_wiimote()
 
     def update_all_sensors(self):
         if self.wiimote is None:
@@ -60,25 +79,6 @@ class WiimoteDrawing:
         self._ir_data = ir_data
         drawing_point = self.compute_drawing_point()
         self._notify_callbacks(drawing_point)
-
-    def connect_wiimote(self, attempt=0):
-        if len(self.btaddr) == 17:
-            print("connecting wiimote " + self.btaddr + "..")
-            try:
-                self.wiimote = wiimote.connect(self.btaddr)
-            except:
-                print(sys.exc_info())
-
-            if self.wiimote is None:
-                print("couldn't connect wiimote. tried it " + str(attempt) + " times")
-                time.sleep(3)
-                self.connect_wiimote(attempt+1)
-            else:
-                print("succesfully connected wiimote")
-                self.start_processing()
-        else:
-            print("bluetooth address has to be 17 characters long")
-            return
 
     def register_callback(self, func):
         self._callbacks.append(func)
@@ -259,9 +259,6 @@ class WiimoteDrawing:
                                     [l * 1, m * 1, t * 1]])
 
         # Step 3
-        DEST_W = 1920
-        DEST_H = 1080
-
         # we adjust the destination rectangle in order to use the whole ir sensor area for drawing
         rectangle_long_side_dist = math.hypot(sx2 - sx1, sy2 - sy1)
         rectangle_short_side_dist = math.hypot(sx3 - sx2, sy3 - sy2)
@@ -314,11 +311,3 @@ class WiimoteDrawing:
 
         print("drawing point", x, y)
         return x, y
-
-
-
-def main():
-    draw = WiimoteDrawing()
-
-if __name__ == '__main__':
-    main()
