@@ -1,6 +1,8 @@
 import sys, random, sched, time, copy
 from threading import Thread
 import numpy as np
+import classifier.quickdraw_npy_bitmap_helper as helper
+import classifier.itt_draw_cnn as draw
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport
 from PyQt5.QtGui import qRgb
@@ -12,7 +14,7 @@ p2 = QtCore.QPoint(400, 400)
 
 words = []
 # Reduced Categories for Testing
-words = [line.rstrip('\n') for line in open('categories (copy).txt')]
+words = [line.rstrip('\n') for line in open('categories.txt')]
 
 
 class ScribbleArea(QtWidgets.QWidget):
@@ -39,22 +41,18 @@ class ScribbleArea(QtWidgets.QWidget):
         self.setMinimumWidth(530)
         self.modified = False
         self.scribbling = False
-        self.myPenWidth = 1
+        self.myPenWidth = 3
         self.myPenColor = QtCore.Qt.black
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
 
         self.stack = QtWidgets.QUndoStack()
-        self.currentImage = QtGui.QImage()
         self.lineSegment = []
         self.segmentList = []
 
         # Undo Test
         self.undo = QtWidgets.QPushButton("undo", self)
         self.undo.clicked.connect(self.stack.undo)
-        self.redo = QtWidgets.QPushButton("redo", self)
-        self.redo.clicked.connect(self.stack.redo)
-        self.redo.move(0, 50)
 
         # Deactivate during debug
         #self.gameStart = False
@@ -132,15 +130,13 @@ class ScribbleArea(QtWidgets.QWidget):
         self.lastPoint = QtCore.QPoint(endPoint)
 
     def resizeImage(self, image, newSize):
-        self.im = image
-        if self.im.size() == newSize:
+        if image.size() == newSize:
             return
-        print(self)
 
         newImage = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
         newImage.fill(qRgb(255, 255, 255))
         painter = QtGui.QPainter(newImage)
-        painter.drawImage(QtCore.QPoint(0, 0), self.im)
+        painter.drawImage(QtCore.QPoint(0, 0), image)
         self.image = newImage
         self.update()
 
@@ -189,6 +185,8 @@ class Painter(QtWidgets.QMainWindow):
         self.initUI()
         self.cw = ScribbleArea(self.ui.frame)
         self.show()
+        self.prHelper = helper.QuickDrawHelper()
+        self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
 
 
     def initUI(self):
@@ -255,11 +253,13 @@ class Painter(QtWidgets.QMainWindow):
         x = self.time-1
         self.cw.addSegment()
         for i in range(x, -1, -1):
+            if i%5 == 0:
+                currentImage = self.cw.saveImage()
+                self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
             if i%2 == 0:
                 self.cw.addSegment()
             if not self.roundWon:
                 time.sleep(1)
-                self.changeGuess(random.choice(words).title())
                 self.ui.timer.display(i)
                 self.checkGuessing()
             else:

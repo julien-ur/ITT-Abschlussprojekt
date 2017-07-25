@@ -12,7 +12,7 @@ class QuickDrawHelper:
     # Max samples per category
     MAX_SAMPLES = 20000
     TEST_SAMPLE_SIZE = 2000
-    DICT_FILEPATH = 'cat_dict.txt'
+    DICT_FILEPATH = 'classifier/cat_dict.txt'
 
     def __init__(self):
         self.data_set = {}
