@@ -144,4 +144,9 @@ class ITTDrawGuesserCNN:
     # Takes grayscale image
     # todo: should maybe make sure passed image has correct format of 28x28 grayscale arrray
     def predict(self, image_data_array):
+        normalized_image_data = self.normalize_data(image_data_array)
         return self.model.predict(image_data_array)
+
+    # Normalize input image array to 28x28 grayscale
+    def normalize_data(self, image_data):
+        pass
