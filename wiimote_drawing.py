@@ -5,27 +5,8 @@ import time
 from threading import Timer,Thread,Event
 import math
 
-import wiimote
-
-
-def connect_wiimote(self, btaddr="18:2a:7b:f4:bc:65", attempt=0):
-    if len(btaddr) == 17:
-        print("connecting wiimote " + btaddr + "..")
-        try:
-            self.wiimote = wiimote.connect(btaddr)
-        except:
-            print(sys.exc_info())
-
-        if self.wiimote is None:
-            print("couldn't connect wiimote. tried it " + str(attempt) + " times")
-            time.sleep(3)
-            self.connect_wiimote(attempt + 1)
-        else:
-            print("succesfully connected wiimote")
-            return WiimoteDrawing()
-    else:
-        print("bluetooth address has to be 17 characters long")
-        return None
+def init(wiimote):
+    return WiimoteDrawing(wiimote)
 
 # Source: https://stackoverflow.com/a/12435256
 class ProcessingThread(Thread):
@@ -46,7 +27,7 @@ class ProcessingThread(Thread):
             self.sleep_time = max(0, sleep_time)
 
 class WiimoteDrawing:
-    def __init__(self):
+    def __init__(self, wiimote):
         self.DEST_W = 1920
         self.DEST_H = 1080
 
@@ -55,7 +36,7 @@ class WiimoteDrawing:
 
         self.update_rate = 60
 
-        self.wiimote = None
+        self.wiimote = wiimote
         self._acc_vals = []
         self._ir_data = []
         self._callbacks = []
@@ -87,9 +68,10 @@ class WiimoteDrawing:
         if func in self._callbacks:
             self._callbacks.remove(func)
 
-    def _notify_callbacks(self):
+    def _notify_callbacks(self, drawingPoint):
         for callback in self._callbacks:
-            callback(self._state)
+            callback(drawingPoint)
+
 
     def start_processing(self):
         if self.update_rate == 0:  # use callbacks for max. update rate
@@ -111,7 +93,7 @@ class WiimoteDrawing:
         x_accel_norm = 0.5 - (x_accel - _min_accel) / (_max_accel - _min_accel)
         z_accel_norm = 0.5 - (z_accel - _min_accel) / (_max_accel - _min_accel)
 
-        #print('{:2f}'.format(x_accel_norm), '{:2f}'.format(z_accel_norm))
+        ##print('{:2f}'.format(x_accel_norm), '{:2f}'.format(z_accel_norm))
 
         ir_points = []
         for i in range(len(self._ir_data)):
@@ -135,7 +117,7 @@ class WiimoteDrawing:
         xmin_point, xmax_point, ymin_point, ymax_point = [(-1, -1) for p in range(4)]
 
         #ir_points = [(582, 477), (947, 311), (507, 314), (841, 143)]
-        print("raw", ir_points)
+        #print("raw", ir_points)
 
         for i in range(len(ir_points)):
             p = ir_points[i]
@@ -166,7 +148,7 @@ class WiimoteDrawing:
         elif quadrant_num == 1:
             sorted_tracking_points = [ymax_point, xmax_point, ymin_point, xmin_point]#[xmin_point, ymin_point, xmax_point, ymax_point]
 
-        print("sorted", sorted_tracking_points)
+        #print("sorted", sorted_tracking_points)
 
         sorted_tracking_points = self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered)
 
@@ -191,8 +173,8 @@ class WiimoteDrawing:
             lowest_avoidance_rating = 1000
 
             if len(indices) > 2:
-                print("more than 2 boundary values are identical. " +
-                      "that shouldn't happen, something's terrible wrong here :(")
+                #print("more than 2 boundary values are identical. " +
+                    #  "that shouldn't happen, something's terrible wrong here :(")
                 return
 
             for i in indices:
@@ -211,15 +193,15 @@ class WiimoteDrawing:
             boundary_type = point_order_dict_list[quadrant_num][faulty_point_index][1]
             search_list = x_list_asc if (order_axis == "x") else y_list_asc
             closest_similar_value = search_list[1] if (boundary_type == "min") else search_list[len(sorted_tracking_points) - 2]
-            print(faulty_point)
-            print(order_axis, boundary_type)
-            print(closest_similar_value)
+            #print(faulty_point)
+            #print(order_axis, boundary_type)
+            #print(closest_similar_value)
 
             for p in ir_points:
                 order_axis_val = p[0] if (order_axis == "x") else p[1]
                 if order_axis_val == closest_similar_value:
                     sorted_tracking_points[faulty_point_index] = p
-                    print("corrected", sorted_tracking_points)
+                    #print("corrected", sorted_tracking_points)
 
         duplicate_points = self.list_duplicates(sorted_tracking_points)
 
@@ -269,14 +251,14 @@ class WiimoteDrawing:
         origin_x = rectangle_to_sensor_diff_x/2 - rectangle_long_side_dist/2
         origin_y = rectangle_to_sensor_diff_y/2 - rectangle_short_side_dist/2
 
-        max_x = DEST_W - origin_x
-        max_y = DEST_H - origin_y
+        max_x = self.DEST_W - origin_x
+        max_y = self.DEST_H - origin_y
         '''
-        print("IR", self.IR_CAM_X, self.IR_CAM_Y)
-        print("rectangle", rectangle_long_side_dist, rectangle_short_side_dist)
-        print("diff", rectangle_to_sensor_diff_x, rectangle_to_sensor_diff_y)
-        print("origin", origin_x, origin_y)
-        print("dest", DEST_W, DEST_H)
+        #print("IR", self.IR_CAM_X, self.IR_CAM_Y)
+        #print("rectangle", rectangle_long_side_dist, rectangle_short_side_dist)
+        #print("diff", rectangle_to_sensor_diff_x, rectangle_to_sensor_diff_y)
+        #print("origin", origin_x, origin_y)
+        #print("dest", self.DEST_W, self.DEST_H)
         '''
         dx1, dy1 = origin_x, origin_y
         dx2, dy2 = max_x, origin_y
@@ -309,5 +291,5 @@ class WiimoteDrawing:
         x = x / z
         y = y / z
 
-        print("drawing point", x, y)
+        #print("drawing point", x, y)
         return x, y

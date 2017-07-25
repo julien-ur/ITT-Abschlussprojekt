@@ -3,8 +3,10 @@ from threading import Thread
 import numpy as np
 import classifier.quickdraw_npy_bitmap_helper as helper
 import classifier.itt_draw_cnn as draw
+import wiimote
+import wiimote_drawing
 
-from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport
+from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport, Qt, QtTest
 from PyQt5.QtGui import qRgb
 
 import qimage2ndarray
@@ -20,17 +22,16 @@ words = [line.rstrip('\n') for line in open('categories.txt')]
 class ScribbleArea(QtWidgets.QWidget):
 
     class InsertLine(QtWidgets.QUndoCommand):
-        def __init__(self, segmentList, scribbleArea):
+        def __init__(self, index, scribbleArea):
             super().__init__()
-            self.segments = segmentList
+            self.index = index
             self.sa = scribbleArea
 
         def undo(self):
-            del self.segments[-1]
-            if not len(self.segments) == 0:
-                self.sa.drawImage(self.segments)
+            self.sa.drawImage(self.index)
 
         def redo(self):
+            #self.sa.drawImage(self.index+1)
             pass
 
     def __init__(self, parent=None):
@@ -47,8 +48,8 @@ class ScribbleArea(QtWidgets.QWidget):
         self.lastPoint = QtCore.QPoint()
 
         self.stack = QtWidgets.QUndoStack()
-        self.lineSegment = []
-        self.segmentList = []
+        self.drawingSegment = []
+        self.drawing = []
 
         # Undo Test
         self.undo = QtWidgets.QPushButton("undo", self)
@@ -75,14 +76,25 @@ class ScribbleArea(QtWidgets.QWidget):
         v = qimage2ndarray.recarray_view(self.image)
         return v
 
+    def setMousePos(self, pos):
+        if pos == None:
+            return
+        #QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
 
-    # Just to Test Drawing####
+    def buttonEvents(self, report):
+        for button in report:
+            if button[0] == "B" and button[1]:
+                QtTest.QTest.mouseClick(self, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, self.cursor().pos())
+                print(self)
+
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
+            print("test")
             self.lastPoint = event.pos()
             self.scribbling = True
 
     def mouseMoveEvent(self, event):
+        print(event.buttons())
         if (event.buttons() & QtCore.Qt.LeftButton) and self.scribbling:
             self.drawLineTo(event.pos())
 
@@ -91,7 +103,6 @@ class ScribbleArea(QtWidgets.QWidget):
             self.drawLineTo(event.pos())
             self.scribbling = False
 
-    ###############################
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -107,22 +118,22 @@ class ScribbleArea(QtWidgets.QWidget):
 
         super(ScribbleArea, self).resizeEvent(event)
 
-    def drawImage(self, segmentList):
+    def drawImage(self, index):
         self.clearImage()
-        for line in segmentList[-1]:
-            if line:
-                self.lastPoint = line.p1()
-                self.drawLineTo(line.p2())
+        for lineSegment in self.drawing[:index]:
+            for line in lineSegment:
+                if line:
+                    self.lastPoint = line.p1()
+                    self.drawLineTo(line.p2())
         self.update()
-        self.lineSegment = segmentList[:]
-        self.segmentList = segmentList[:]
+        self.drawing
 
     def drawLineTo(self, endPoint):
         painter = QtGui.QPainter(self.image)
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth, QtCore.Qt.SolidLine,
                 QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.line = QtCore.QLine(self.lastPoint, endPoint)
-        self.lineSegment.append(self.line)
+        self.drawingSegment.append(self.line)
         painter.drawLine(self.line)
         self.modified = True
         rad = self.myPenWidth / 2 + 2
@@ -164,15 +175,17 @@ class ScribbleArea(QtWidgets.QWidget):
         return self.myPenWidth
 
     def addSegment(self):
-        segment = self.lineSegment[:]
-        self.segmentList.append(segment)
-        self.stack.push(self.InsertLine(self.segmentList, self))
+        self.drawing.append(self.drawingSegment)
+        self.stack.push(self.InsertLine(len(self.drawing)-1, self))
+        self.drawingSegment = []
 
 
 class Painter(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, wiimote, wiiDraw):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
+        print(self.pos().x())
+        print(self.pos().y())
         self.time = 60
         self.currentWord = ""
         self.gameRunning = True
@@ -187,7 +200,9 @@ class Painter(QtWidgets.QMainWindow):
         self.show()
         self.prHelper = helper.QuickDrawHelper()
         self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
-
+        wiimote.buttons.register_callback(self.cw.buttonEvents)
+        wiiDraw.register_callback(self.cw.setMousePos)
+        wiiDraw.start_processing()
 
     def initUI(self):
         self.ui.color.clicked.connect(self.setNewColor)
@@ -215,8 +230,6 @@ class Painter(QtWidgets.QMainWindow):
         #sys.exit()
 
     def startNewRound(self):
-        self.cw.segmentList = []
-        self.cw.lineSegment = []
         if self.gameRunning:
             # Change icon above Team
             if self.currentTeam == 1:
@@ -251,9 +264,8 @@ class Painter(QtWidgets.QMainWindow):
 
     def countdown(self):
         x = self.time-1
-        self.cw.addSegment()
         for i in range(x, -1, -1):
-            if i%5 == 0:
+            if i%30 == 0:
                 currentImage = self.cw.saveImage()
                 self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
             if i%2 == 0:
@@ -308,10 +320,33 @@ class Painter(QtWidgets.QMainWindow):
     def setKIGuess(self):
         print("Guess:")
 
+def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
+    if len(btaddr) == 17:
+        #print("connecting wiimote " + btaddr + "..")
+        w = None
+        try:
+            w = wiimote.connect(btaddr)
+        except:
+            #print(sys.exc_info())
+            pass
+        if w is None:
+            #print("couldn't connect wiimote. tried it " + str(attempt) + " times")
+            time.sleep(3)
+            connect_wiimote(btaddr, attempt + 1)
+        else:
+            #print("succesfully connected wiimote")
+            return w
+    else:
+        #print("bluetooth address has to be 17 characters long")
+        return None
+
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    paint = Painter()
+    wiimote = connect_wiimote()
+    wiiDraw = wiimote_drawing.init(wiimote)
+    paint = Painter(wiimote, wiiDraw)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
