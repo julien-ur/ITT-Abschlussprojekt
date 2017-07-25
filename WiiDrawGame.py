@@ -1,4 +1,4 @@
-import sys, random, sched, time
+import sys, random, sched, time, copy
 from threading import Thread
 import numpy as np
 
@@ -12,24 +12,25 @@ p2 = QtCore.QPoint(400, 400)
 
 words = []
 # Reduced Categories for Testing
-words = [line.rstrip('\n') for line in open('categories.txt')]
-
-class InsertLine(QtWidgets.QUndoCommand):
-    def __init__(self, line, arrayList):
-            super().__init__()
-            self.line = line
-            self.arrayList = arrayList
-    def undo(self):
-        print(len(self.arrayList))
-        self.arrayList.pop()
-
-    def redo(self):
-        print(len(self.arrayList))
-        self.arrayList.append(self.line)
-
+words = [line.rstrip('\n') for line in open('categories (copy).txt')]
 
 
 class ScribbleArea(QtWidgets.QWidget):
+
+    class InsertLine(QtWidgets.QUndoCommand):
+        def __init__(self, segmentList, scribbleArea):
+            super().__init__()
+            self.segments = segmentList
+            self.sa = scribbleArea
+
+        def undo(self):
+            del self.segments[-1]
+            if not len(self.segments) == 0:
+                self.sa.drawImage(self.segments)
+
+        def redo(self):
+            pass
+
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
 
@@ -42,10 +43,12 @@ class ScribbleArea(QtWidgets.QWidget):
         self.myPenColor = QtCore.Qt.black
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
+
         self.stack = QtWidgets.QUndoStack()
-        self.lineList = []
-        self.ba = QtCore.QByteArray()
-        self.buffer = QtCore.QBuffer()
+        self.currentImage = QtGui.QImage()
+        self.lineSegment = []
+        self.segmentList = []
+
         # Undo Test
         self.undo = QtWidgets.QPushButton("undo", self)
         self.undo.clicked.connect(self.stack.undo)
@@ -73,6 +76,7 @@ class ScribbleArea(QtWidgets.QWidget):
     def saveImage(self):
         v = qimage2ndarray.recarray_view(self.image)
         return v
+
 
     # Just to Test Drawing####
     def mousePressEvent(self, event):
@@ -105,33 +109,40 @@ class ScribbleArea(QtWidgets.QWidget):
 
         super(ScribbleArea, self).resizeEvent(event)
 
+    def drawImage(self, segmentList):
+        self.clearImage()
+        for line in segmentList[-1]:
+            if line:
+                self.lastPoint = line.p1()
+                self.drawLineTo(line.p2())
+        self.update()
+        self.lineSegment = segmentList[:]
+        self.segmentList = segmentList[:]
+
     def drawLineTo(self, endPoint):
         painter = QtGui.QPainter(self.image)
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth, QtCore.Qt.SolidLine,
                 QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
         self.line = QtCore.QLine(self.lastPoint, endPoint)
-        command = InsertLine(self.line, self.lineList)
-        self.stack.push(command)
-
-        # Undo Test with Array
-        #print(len(self.lineList))
-
+        self.lineSegment.append(self.line)
         painter.drawLine(self.line)
         self.modified = True
-
         rad = self.myPenWidth / 2 + 2
         self.update(QtCore.QRect(self.lastPoint, endPoint).normalized().adjusted(-rad, -rad, +rad, +rad))
         self.lastPoint = QtCore.QPoint(endPoint)
 
     def resizeImage(self, image, newSize):
-        if image.size() == newSize:
+        self.im = image
+        if self.im.size() == newSize:
             return
+        print(self)
 
         newImage = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
         newImage.fill(qRgb(255, 255, 255))
         painter = QtGui.QPainter(newImage)
-        painter.drawImage(QtCore.QPoint(0, 0), image)
+        painter.drawImage(QtCore.QPoint(0, 0), self.im)
         self.image = newImage
+        self.update()
 
     def print_(self):
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
@@ -155,6 +166,11 @@ class ScribbleArea(QtWidgets.QWidget):
 
     def penWidth(self):
         return self.myPenWidth
+
+    def addSegment(self):
+        segment = self.lineSegment[:]
+        self.segmentList.append(segment)
+        self.stack.push(self.InsertLine(self.segmentList, self))
 
 
 class Painter(QtWidgets.QMainWindow):
@@ -201,6 +217,8 @@ class Painter(QtWidgets.QMainWindow):
         #sys.exit()
 
     def startNewRound(self):
+        self.cw.segmentList = []
+        self.cw.lineSegment = []
         if self.gameRunning:
             # Change icon above Team
             if self.currentTeam == 1:
@@ -235,7 +253,10 @@ class Painter(QtWidgets.QMainWindow):
 
     def countdown(self):
         x = self.time-1
+        self.cw.addSegment()
         for i in range(x, -1, -1):
+            if i%2 == 0:
+                self.cw.addSegment()
             if not self.roundWon:
                 time.sleep(1)
                 self.changeGuess(random.choice(words).title())
