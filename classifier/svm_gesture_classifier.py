@@ -9,6 +9,7 @@ import sys
 class SimpleGestureRecognizer:
 
     MAX_BUFFER_SIZE = 100
+    LABEL_DICT = {0: 'delete', 1: 'trash'}
 
     def __init__(self):
         self.classifier = svm.SVC()
@@ -24,7 +25,7 @@ class SimpleGestureRecognizer:
             print("Buffer not full, prediction may be faulty")
 
         fft_transformed_data = np.abs(fft(self.input_buffer) / len(self.input_buffer))[1:len(self.input_buffer) // 2]
-        return self.classifier.predict(fft_transformed_data)
+        return self.LABEL_DICT[self.classifier.predict(fft_transformed_data)]
 
     def save_classifier(self, output_name):
         joblib.dump(self.classifier, output_name)

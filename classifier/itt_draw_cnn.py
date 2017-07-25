@@ -1,5 +1,6 @@
+"""
 # prerequisites for tflearn:
-# curses, numpy+mkl
+# tensorflow/tensorflow-gpu, curses, numpy+mkl, scipy
 # for gpu support: https://www.tensorflow.org/install/install_windows#requirements_to_run_tensorflow_with_gpu_support
 # CUDA Toolkit 8.0
 # cuDNN v5.1
@@ -7,37 +8,51 @@
 # tensorflow-gpu package
 # get necessary wheels from www.lfd.uci.edu/~gohlke/pythonlibs/
 
+ImageGuesserCNN is a convolutional deep neural network
+Takes length of category list as argument to get the number of needed nodes in last fully connected layer
+Created with the tflearn wrapper for TensorFlow
+Input layer expects a grayscale 28x28 pixel array
+Uses two convolutional layers, max pooling after each to downsample data
+2 fully connected layers to classify image data
+Adapted from https://www.tensorflow.org/tutorials/layers
+
+How to use:
+Create ITTDrawGuesserCNN instance, giving number of categories to classify as argument
+Set epoch and checkpoint path as needed or leave at default values
+Train model by providing training data with labels, and test data with labels
+Save/load model as needed
+Get prediction of category as list of probabilities for each category
+"""
+
 import tflearn
 import tensorflow as tf
 import os
+import numpy as np
+from PIL import Image
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.layers.normalization import local_response_normalization
 
 
-# ImageGuesserCNN is a convolutional deep neural network
-# Takes length of category list as argument to get the number of needed nodes in last fully connected layer
-# Created with the tflearn wrapper for TensorFlow
-# Input layer expects a grayscale 28x28 pixel array
-# Uses two convolutional layers, max pooling after each to downsample data
-# 2 fully connected layers to classify image data
-# Adapted from https://www.tensorflow.org/tutorials/layers
-
-# How to use:
-# Create ITTDrawGuesserCNN instance, giving number of categories to classify as argument
-# Set epoch and checkpoint path as needed or leave at default values
-# Train model by providing training data with labels, and test data with labels
-# Save/load model as needed
-# Get prediction of category as list of probabilities for each category
-
 class ITTDrawGuesserCNN:
     DEFAULT_CHECKPOINT_PATH = 'ITTDrawGuesser.tfl.ckpt'
+
+    # Number of epochs is really low, better 100 or more epochs
+    # Number chosen because of time constraints
+    # Training and adjusting the neural networks took too much time on CPU, as GPU support couldn't be made to work
     DEFAULT_EPOCH = 10
+
+    # Couldn't make tensorflow-gpu work, recognizes gpu but crashes
     use_cpu_only = True
 
     def __init__(self, num_categories):
+        # Dynamic output node number
         self.num_categories = num_categories
+
+        # training image size is image size from following training data:
+        # https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/numpy_bitmap/?pli=1
+        self.training_image_size = (28, 28)
         self.checkpoint_path = self.DEFAULT_CHECKPOINT_PATH
         self.epoch = self.DEFAULT_EPOCH
 
@@ -145,8 +160,11 @@ class ITTDrawGuesserCNN:
     # todo: should maybe make sure passed image has correct format of 28x28 grayscale arrray
     def predict(self, image_data_array):
         normalized_image_data = self.normalize_data(image_data_array)
-        return self.model.predict(image_data_array)
+        return self.model.predict(normalized_image_data)
 
     # Normalize input image array to 28x28 grayscale
     def normalize_data(self, image_data):
-        pass
+        image = Image.fromarray(image_data)
+        image = image.convert('L')
+        image = image.resize(self.training_image_size, Image.ANTIALIAS)
+        return list(np.array(image))
