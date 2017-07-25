@@ -1,0 +1,1 @@
+{0: 'angel', 1: 'banana', 2: 'beach', 3: 'campfire', 4: 'clock', 5: 'guitar', 6: 'hot dog', 7: 'lighthouse', 8: 'octopus', 9: 'penguin', 10: 'spreadsheet', 11: 'strawberry', 12: 'umbrella', 13: 'whale', 14: 'zebra'}
