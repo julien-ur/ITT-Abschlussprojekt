@@ -8,7 +8,7 @@ import sys
 # Recognize simple gestures by transforming x,y,z accelerometer data (mean, fast fourier transformation) and using svm
 class SimpleGestureRecognizer:
 
-    MAX_BUFFER_SIZE = 300
+    MAX_BUFFER_SIZE = 100
     LABEL_DICT = {0: 'delete', 1: 'trash'}
 
     def __init__(self):

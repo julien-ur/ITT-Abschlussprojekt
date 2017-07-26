@@ -44,6 +44,8 @@ class ScribbleArea(QtWidgets.QWidget):
 
         self.drawingSegment = []
         self.drawing = []
+        self.drawing.append([])
+        self.drawing.append([])
         self.currentSegmentIndex = 1
 
         # Undo Test
@@ -279,8 +281,6 @@ class Painter(QtWidgets.QMainWindow):
 
     def countdown(self):
         x = self.time-1
-        self.cw.drawing.append([])
-        self.cw.drawing.append([])
         for i in range(x, -1, -1):
             if i%3 == 0:
                 currentImage = self.cw.saveImage()
@@ -289,7 +289,7 @@ class Painter(QtWidgets.QMainWindow):
                 self.cw.addSegment()
             if i % 1 == 0:
                 print(i, self.image_clear_count_index - i)
-                if self.svm.predict() == 0 and self.image_clear_count_index - i > 5:
+                if self.svm.predict() == 0 and self.image_clear_count_index - i > 2:
                     self.image_clear_count_index = i
                     self.clearImage()
             if not self.roundWon:
@@ -352,6 +352,8 @@ class Painter(QtWidgets.QMainWindow):
 
     def buttonEvents(self, report):
         for button in report:
+            if button[0] == "A" and not button[1]:
+                self.cw.undo()
             if button[0] == "B" and button[1]:
                 pyautogui.mouseDown(button="left")
             elif button[0] == "B" and not button[1]:

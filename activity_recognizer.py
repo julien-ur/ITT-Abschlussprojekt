@@ -143,7 +143,6 @@ class SvmNode(Node):
     def process(self, **kwds):
         self.freqData = kwds['dataIn']
         prediction = ''
-        print("processing")
 
         if self.currentMode == 'Inactive':
             prediction = 'Classifier inactive'
@@ -179,7 +178,7 @@ class SvmNode(Node):
         self.gesture_timer.start(5000)
 
     def write_cat_dict_to_file(self):
-        with open("delete_gesture_fft.txt", 'w') as dict_file:
+        with open("dummy_gesture_fft.txt", 'w') as dict_file:
             dict_file.write(str(self.freqData))
 
     def gesture_ended(self):
