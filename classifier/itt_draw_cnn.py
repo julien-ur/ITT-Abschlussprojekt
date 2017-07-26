@@ -1,6 +1,6 @@
 """
 # prerequisites for tflearn:
-# tensorflow/tensorflow-gpu, curses, numpy+mkl, scipy
+# tensorflow/tensorflow-gpu, curses, numpy+mkl, scipy, h5py
 # for gpu support: https://www.tensorflow.org/install/install_windows#requirements_to_run_tensorflow_with_gpu_support
 # CUDA Toolkit 8.0
 # cuDNN v5.1
@@ -163,8 +163,10 @@ class ITTDrawGuesserCNN:
         return self.model.predict(normalized_image_data)
 
     # Normalize input image array to 28x28 grayscale
+    # Find better way to transform numpy.recarray to numpy.array
     def normalize_data(self, image_data):
-        image = Image.fromarray(image_data)
+        image_data = np.array(image_data.tolist())
+        image = Image.fromarray(image_data, 'RGBA')
         image = image.convert('L')
         image = image.resize(self.training_image_size, Image.ANTIALIAS)
-        return list(np.array(image))
+        return np.array(image)
