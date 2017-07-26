@@ -39,6 +39,8 @@ class ScribbleArea(QtWidgets.QWidget):
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
 
+        self.gameRuns = False
+
         self.drawingSegment = []
         self.drawing = []
         self.currentSegmentIndex = 1
@@ -71,6 +73,15 @@ class ScribbleArea(QtWidgets.QWidget):
     def clearImage(self):
         self.image.fill(QtGui.qRgb(0, 0, 0))
         self.modified = True
+        self.drawing = []
+        self.drawing.append([])
+        self.drawing.append([])
+        self.currentSegmentIndex = 1
+        self.update()
+
+    def resetCanvas(self):
+        self.image.fill(QtGui.qRgb(0, 0, 0))
+        self.modified = True
         self.update()
 
     def saveImage(self):
@@ -84,7 +95,8 @@ class ScribbleArea(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, event):
         if (event.buttons() & QtCore.Qt.LeftButton) and self.scribbling:
-            self.updateDrawing(event.pos())
+            if self.gameRuns:
+                self.updateDrawing(event.pos())
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.scribbling:
@@ -106,7 +118,7 @@ class ScribbleArea(QtWidgets.QWidget):
         super(ScribbleArea, self).resizeEvent(event)
 
     def drawImage(self):
-        self.clearImage()
+        self.resetCanvas()
         for lineSegment in self.drawing[:self.currentSegmentIndex+1]:
             for line in lineSegment:
                 if line:
@@ -228,6 +240,7 @@ class Painter(QtWidgets.QMainWindow):
     def endGaming(self):
         print("Ende")
         #sys.exit()
+        # Alle var auf neu setzen, titelscreen
 
     def startNewRound(self):
         if self.gameRunning:
@@ -241,13 +254,16 @@ class Painter(QtWidgets.QMainWindow):
                 self.ui.redTeam.show()
                 self.ui.blueTeam.hide()
 
+            self.cw.gameRuns = True
             self.roundWon = False
             self.roundRunning = True
-            self.currentWord = "clock" #random.choice(words)
+            self.currentWord = "umbrella" #random.choice(words)
+            self.guess = ""
             self.ui.timer.display(self.time)
             self.ui.category.setText(self.currentWord)
             self.clearImage()
             self.ui.startGame.setEnabled(False)
+            self.ui.kiGuess.setText("I think it is: %s" % self.guess)
             t = Thread(target=self.countdown)
             t.start()
 
@@ -297,7 +313,7 @@ class Painter(QtWidgets.QMainWindow):
             self.gameRunning = False
         self.roundRunning = False
         self.ui.startGame.setEnabled(True)
-        self.cw.drawing = []
+        self.cw.gameRuns = False
 
     def checkGuessing(self):
         if self.guess == self.currentWord:
@@ -314,9 +330,6 @@ class Painter(QtWidgets.QMainWindow):
         col = QtWidgets.QColorDialog.getColor()
         if col.isValid():
             self.cw.setPenColor(col)
-
-    def setKIGuess(self):
-        print("Guess:")
 
     def setMousePos(self, pos):
         if pos == None:
