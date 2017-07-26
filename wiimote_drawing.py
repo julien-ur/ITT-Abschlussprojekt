@@ -86,7 +86,7 @@ class WiimoteDrawing:
 
     def _notify_callbacks(self, drawing_point):
         for callback in self._callbacks:
-            callback(drawing_point)
+            callback(drawing_point, self._acc_vals)
 
     def start_processing(self):
         if self.update_rate == 0:  # use callbacks for max. update rate
