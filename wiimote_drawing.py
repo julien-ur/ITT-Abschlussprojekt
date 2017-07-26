@@ -30,28 +30,31 @@ class WiimoteDrawing:
     def __init__(self, wiimote):
         self.DEST_W = 1920
         self.DEST_H = 1080
-
         self.IR_CAM_X = 1024
         self.IR_CAM_Y = 768
-
         self.update_rate = 60
 
         self.wiimote = wiimote
         self._acc_vals = []
         self._ir_data = []
+        self.buffer_size = 5
+        self.buffer = [0] * self.buffer_size
         self._callbacks = []
 
-        # update timer
-        self.update_time_stop_flag = Event()
-        self.update_timer = ProcessingThread(self.update_all_sensors, self.update_rate, self.update_time_stop_flag)
+        self.update_timer_stop_flag = Event()
+        self.update_timer = ProcessingThread(self.update_drawing_point, self.update_rate, self.update_timer_stop_flag)
+
+    def update_drawing_point(self):
+        self.update_all_sensors()
+        drawing_point = self.compute_drawing_point()
+        buffered_point = self.moving_average_buffer(drawing_point)
+        self._notify_callbacks(buffered_point)
 
     def update_all_sensors(self):
         if self.wiimote is None:
             return
         self._acc_vals = self.wiimote.accelerometer
         self._ir_data = self.wiimote.ir
-        drawing_point = self.compute_drawing_point()
-        self._notify_callbacks(drawing_point)
 
     def update_accel(self, acc_vals):
         self._acc_vals = acc_vals
@@ -59,7 +62,13 @@ class WiimoteDrawing:
     def update_ir(self, ir_data):
         self._ir_data = ir_data
         drawing_point = self.compute_drawing_point()
-        self._notify_callbacks(drawing_point)
+        buffered_point = self.moving_average_buffer(drawing_point)
+        self._notify_callbacks(buffered_point)
+
+    def moving_average_buffer(self, sample):
+        self.buffer.append(sample)
+        self.buffer = self.buffer[-self.buffer_size:]
+        return sum(self.buffer) / len(self.buffer)
 
     def register_callback(self, func):
         self._callbacks.append(func)
@@ -68,14 +77,13 @@ class WiimoteDrawing:
         if func in self._callbacks:
             self._callbacks.remove(func)
 
-    def _notify_callbacks(self, drawingPoint):
+    def _notify_callbacks(self, drawing_point):
         for callback in self._callbacks:
-            callback(drawingPoint)
-
+            callback(drawing_point)
 
     def start_processing(self):
         if self.update_rate == 0:  # use callbacks for max. update rate
-            self.update_time_stop_flag.set()
+            self.update_timer_stop_flag.set()
             self.wiimote.ir.register_callback(self.update_ir)
             self.wiimote.accelerometer.register_callback(self.update_accel)
         else:
