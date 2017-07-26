@@ -177,9 +177,15 @@ class SvmNode(Node):
 
         self.gesture_timer.start(5000)
 
+    def write_cat_dict_to_file(self):
+        with open("delete_gesture_fft.txt", 'w') as dict_file:
+            dict_file.write(str(self.freqData))
+
     def gesture_ended(self):
         self.learnButton.setText("Start Gesture")
         gestureIndex = self.gestures.index(self.gestureName)
+
+        self.write_cat_dict_to_file()
 
         if len(self.freqData) > 0:
             if gestureIndex == len(self.trainingData):
