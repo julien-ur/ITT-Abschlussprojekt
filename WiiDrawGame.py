@@ -7,6 +7,7 @@ import wiimote
 import wiimote_drawing
 import images.images_rc
 import pyautogui
+import classifier.svm_gesture_classifier as svm_classifier
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport, Qt, QtTest
 from PyQt5.QtGui import qRgb
@@ -206,6 +207,9 @@ class Painter(QtWidgets.QMainWindow):
         self.prHelper = helper.QuickDrawHelper()
         self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
         self.trainModel.load_model("classifier/draw_game_model.tfl")
+        self.svm = svm_classifier.SimpleGestureRecognizer()
+        self.svm.load_classifier("classifier/svm_model.gz")
+
         wiimote.buttons.register_callback(self.buttonEvents)
         wiiDraw.register_callback(self.setMousePos)
         wiiDraw.start_processing()
@@ -282,6 +286,9 @@ class Painter(QtWidgets.QMainWindow):
                 self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
             if i%2 == 0:
                 self.cw.addSegment()
+            if i % 1 == 0:
+                if self.svm.predict() == 0:
+                    self.clearImage()
             if not self.roundWon:
                 time.sleep(1)
                 self.ui.timer.display(i)
@@ -331,7 +338,10 @@ class Painter(QtWidgets.QMainWindow):
         if col.isValid():
             self.cw.setPenColor(col)
 
-    def setMousePos(self, pos):
+    def setMousePos(self, pos, acc):
+        x, y, z = acc
+        self.svm.update_buffer(x, y, z)
+
         if pos == None:
             return
         QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
@@ -346,22 +356,22 @@ class Painter(QtWidgets.QMainWindow):
 
 def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
     if len(btaddr) == 17:
-        #print("connecting wiimote " + btaddr + "..")
+        print("connecting wiimote " + btaddr + "..")
         w = None
         try:
             w = wiimote.connect(btaddr)
         except:
-            #print(sys.exc_info())
+            print(sys.exc_info())
             pass
         if w is None:
-            #print("couldn't connect wiimote. tried it " + str(attempt) + " times")
+            print("couldn't connect wiimote. tried it " + str(attempt) + " times")
             time.sleep(3)
             return connect_wiimote(btaddr, attempt + 1)
         else:
-            #print("succesfully connected wiimote")
+            print("succesfully connected wiimote")
             return w
     else:
-        #print("bluetooth address has to be 17 characters long")
+        print("bluetooth address has to be 17 characters long")
         return None
 
 

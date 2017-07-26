@@ -8,7 +8,7 @@ import sys
 # Recognize simple gestures by transforming x,y,z accelerometer data (mean, fast fourier transformation) and using svm
 class SimpleGestureRecognizer:
 
-    MAX_BUFFER_SIZE = 100
+    MAX_BUFFER_SIZE = 300
     LABEL_DICT = {0: 'delete', 1: 'trash'}
 
     def __init__(self):
@@ -19,13 +19,13 @@ class SimpleGestureRecognizer:
         self.classifier.fit(training_data, categories)
 
     def predict(self):
-        if len(self.input_buffer) < 1:
-            return -1
+
         if len(self.input_buffer) < self.MAX_BUFFER_SIZE:
             print("Buffer not full, prediction may be faulty")
+            return 1
 
         fft_transformed_data = np.abs(fft(self.input_buffer) / len(self.input_buffer))[1:len(self.input_buffer) // 2]
-        return self.LABEL_DICT[self.classifier.predict(fft_transformed_data)]
+        return self.classifier.predict(fft_transformed_data)[0]
 
     def save_classifier(self, output_name):
         joblib.dump(self.classifier, output_name)

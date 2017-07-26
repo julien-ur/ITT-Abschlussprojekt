@@ -9,6 +9,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 from scipy import fft
 from sklearn import svm
+from sklearn.externals import joblib
 
 import wiimote
 
@@ -87,7 +88,7 @@ class SvmNode(Node):
             'catOut': dict(io='out'),
         }
 
-        self._classifier = svm.SVC()
+        self._classifier = joblib.load('classifier/svm_model.gz')
         self._gestures = {}
         self.freqData = []
         self.modes = ['Learn', 'Predict', 'Inactive']
@@ -142,6 +143,7 @@ class SvmNode(Node):
     def process(self, **kwds):
         self.freqData = kwds['dataIn']
         prediction = ''
+        print("processing")
 
         if self.currentMode == 'Inactive':
             prediction = 'Classifier inactive'
@@ -150,11 +152,10 @@ class SvmNode(Node):
             prediction = 'Classifier now in learning mode'
 
         elif self.currentMode == 'Predict':
-            if len(self.gestures) < 2:
-                prediction = 'Classifier needs more than one gesture to work'
-            else:
-                prediction = self._classifier.predict([self.freqData])[0]
-                prediction = 'Current gesture prediction: ' + prediction
+            prediction = self._classifier.predict([self.freqData])[0]
+            prediction = 'Current gesture prediction: ' + str(prediction)
+            print(str(prediction))
+
 
         self.predictionLabel.setText(prediction)
 
