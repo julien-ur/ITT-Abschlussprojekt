@@ -42,6 +42,7 @@ class ScribbleArea(QtWidgets.QWidget):
         self.drawingSegment = []
         self.drawing = []
         self.currentSegmentIndex = 1
+        self.newSegmentFlag = False
 
         # Undo Test
         self.undoButton = QtWidgets.QPushButton("undo", self)
@@ -51,8 +52,9 @@ class ScribbleArea(QtWidgets.QWidget):
         #self.gameStart = False
     def undo(self):
         self.currentSegmentIndex = max(0, self.currentSegmentIndex -1)
-        if len(self.drawing[self.currentSegmentIndex]) == 0:
-            self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
+        print(self.currentSegmentIndex)
+        print(len(self.drawing))
+
         self.drawImage()
 
     def redo(self):
@@ -115,9 +117,15 @@ class ScribbleArea(QtWidgets.QWidget):
         self.update()
 
     def updateDrawing(self, p):
+        if self.newSegmentFlag:
+            self.drawing.append([])
+            self.currentSegmentIndex = len(self.drawing) - 1
+            self.newSegmentFlag = False
+
         if self.currentSegmentIndex < len(self.drawing)-1:
+            print("test")
             self.currentSegmentIndex = self.currentSegmentIndex + 1
-            self.drawing = self.drawing[:self.currentSegmentIndex+1]
+            self.drawing = self.drawing[:self.currentSegmentIndex]
             self.drawing[self.currentSegmentIndex] = []
         self.drawLineTo(p)
         self.drawing[self.currentSegmentIndex].append(self.line)
@@ -166,14 +174,6 @@ class ScribbleArea(QtWidgets.QWidget):
 
     def penWidth(self):
         return self.myPenWidth
-
-    def addSegment(self):
-        if self.currentSegmentIndex < len(self.drawing)-1:
-            return
-        if len(self.drawing[self.currentSegmentIndex]) == 0:
-            return
-        self.drawing.append([])
-        self.currentSegmentIndex = len(self.drawing)-1
 
 class Painter(QtWidgets.QMainWindow):
     def __init__(self, wiimote, wiiDraw):
@@ -265,7 +265,7 @@ class Painter(QtWidgets.QMainWindow):
                 currentImage = self.cw.saveImage()
                 self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
             if i%2 == 0:
-                self.cw.addSegment()
+                self.cw.newSegmentFlag = True
             if not self.roundWon:
                 time.sleep(1)
                 self.ui.timer.display(i)
