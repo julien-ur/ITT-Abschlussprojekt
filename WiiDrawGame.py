@@ -202,6 +202,7 @@ class Painter(QtWidgets.QMainWindow):
         self.scoreTeamTwo = 0
         self.guess = ""
         self.initUI()
+        self.image_clear_count_index = self.time
         self.cw = ScribbleArea(self.ui.frame)
         self.show()
         self.prHelper = helper.QuickDrawHelper()
@@ -287,7 +288,9 @@ class Painter(QtWidgets.QMainWindow):
             if i%2 == 0:
                 self.cw.addSegment()
             if i % 1 == 0:
-                if self.svm.predict() == 0:
+                print(i, self.image_clear_count_index - i)
+                if self.svm.predict() == 0 and self.image_clear_count_index - i > 5:
+                    self.image_clear_count_index = i
                     self.clearImage()
             if not self.roundWon:
                 time.sleep(1)
@@ -339,6 +342,7 @@ class Painter(QtWidgets.QMainWindow):
             self.cw.setPenColor(col)
 
     def setMousePos(self, pos, acc):
+
         x, y, z = acc
         self.svm.update_buffer(x, y, z)
 
