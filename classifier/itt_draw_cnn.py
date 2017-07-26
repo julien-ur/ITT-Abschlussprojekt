@@ -165,8 +165,27 @@ class ITTDrawGuesserCNN:
     # Normalize input image array to 28x28 grayscale
     # Find better way to transform numpy.recarray to numpy.array
     def normalize_data(self, image_data):
-        image_data = np.array(image_data.tolist())
-        image = Image.fromarray(image_data, 'RGBA')
-        image = image.convert('L')
-        image = image.resize(self.training_image_size, Image.ANTIALIAS)
+        if image_data.shape == (self.training_image_size[0]*self.training_image_size[1],):
+            return image_data
+        else:
+            #image_data = np.array(image_data.tolist())
+            image = Image.fromarray(image_data, 'RGB')
+            image.save('raw.png')
+            image = image.convert('L')
+            image.save('grayscale.png')
+            image = image.resize(self.training_image_size, Image.BILINEAR)
+            image.save('resized.png')
+            image = np.array(image)
+
+            image = self.boost_non_black_pixels(image)
+            print(image)
+            return np.array(image)
+
+    def boost_non_black_pixels(self, image):
+        for i in range(len(image)):
+            for j in range(len(image[0])):
+                if image[i][j] != 0:
+                    image[i][j] = 255
+        image = Image.fromarray(image, 'L')
+        image.save('whited.png')
         return np.array(image)
