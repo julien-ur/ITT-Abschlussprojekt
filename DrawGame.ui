@@ -370,7 +370,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../../Desktop/paper.jpg</pixmap>
+    <pixmap resource="images/images.qrc">:/background/paper.jpg</pixmap>
    </property>
   </widget>
   <widget class="QLabel" name="redTeam">
@@ -386,7 +386,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../../Desktop/redDot.png</pixmap>
+    <pixmap resource="images/images.qrc">:/teamDots/redDot.png</pixmap>
    </property>
   </widget>
   <widget class="QLabel" name="blueTeam">
@@ -402,7 +402,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>images/blueDot.png</pixmap>
+    <pixmap resource="images/images.qrc">:/teamDots/blueDot.png</pixmap>
    </property>
   </widget>
   <zorder>kiGuess</zorder>
@@ -426,7 +426,9 @@
   <zorder>startButton</zorder>
   <zorder>selectSeconds</zorder>
  </widget>
- <resources/>
+ <resources>
+  <include location="images/images.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>secondsSlider</sender>
