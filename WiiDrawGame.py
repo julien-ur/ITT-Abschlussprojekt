@@ -103,8 +103,9 @@ class ScribbleArea(QtWidgets.QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.scribbling:
-            self.updateDrawing(event.pos())
-            self.scribbling = False
+            if self.gameRuns:
+                self.updateDrawing(event.pos())
+                self.scribbling = False
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -195,6 +196,7 @@ class Painter(QtWidgets.QMainWindow):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
         self.time = 60
+        self.winningPoints = 1
         self.currentWord = ""
         self.gameRunning = True
         self.roundWon = False
@@ -218,11 +220,10 @@ class Painter(QtWidgets.QMainWindow):
         wiiDraw.start_processing()
 
     def initUI(self):
-        self.ui.color.clicked.connect(self.setNewColor)
         self.ui.clear.clicked.connect(self.clearImage)
         self.ui.startButton.clicked.connect(self.startGaming)
         self.ui.startGame.clicked.connect(self.startNewRound)
-        self.ui.endGame.clicked.connect(self.endGaming)
+        self.ui.endGame.clicked.connect(self.startNewGame)
         self.ui.timer.display(self.time)
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
@@ -235,6 +236,8 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.blueTeam.setPixmap(blueTeamIcon)
 
     def startGaming(self):
+        print(self.scoreTeamOne)
+
         self.ui.title.hide()
         self.ui.startButton.hide()
         self.ui.startScreen.lower()
@@ -244,10 +247,37 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.selectSeconds.hide()
         self.ui.secondsSlider.hide()
 
-    def endGaming(self):
-        print("Ende")
-        #sys.exit()
-        # Alle var auf neu setzen, titelscreen
+
+    def startNewGame(self):
+        self.setTitleScreen()
+        self.time = 60
+        self.currentWord = ""
+        self.roundWon = False
+        self.roundRunning = False
+        self.gameRunning = True
+        self.currentTeam = 1
+        print(self.scoreTeamOne)
+        self.scoreTeamOne = 0
+        self.scoreTeamTwo = 0
+        self.guess = ""
+        print(self.scoreTeamOne)
+        self.cw.clearImage()
+        self.initUI()
+
+    def setTitleScreen(self):
+        self.ui.startScreen.raise_()
+        self.ui.title.show()
+        self.ui.title.raise_()
+        self.ui.startButton.show()
+        self.ui.startButton.raise_()
+        self.ui.secondText.show()
+        self.ui.secondText.raise_()
+        self.ui.selectSeconds.show()
+        self.ui.selectSeconds.raise_()
+        self.ui.secondsSlider.show()
+        self.ui.secondsSlider.raise_()
+        self.ui.kiGuess.setText("")
+        self.ui.category.setText("Term")
 
     def startNewRound(self):
         if self.gameRunning:
@@ -297,7 +327,6 @@ class Painter(QtWidgets.QMainWindow):
                 self.ui.timer.display(i)
                 self.checkGuessing()
             else:
-                print("Winner")
                 break
         self.processEndRound()
         print("Round End")
@@ -306,21 +335,27 @@ class Painter(QtWidgets.QMainWindow):
     def processEndRound(self):
         if self.roundWon:
             if self.currentTeam == 1:
-                self.scoreTeamOne += 1
+                self.scoreTeamOne = self.scoreTeamOne + 1
+                self.ui.kiGuess.setText("Oh, i know, the Word is: %s. Team 1 gets 1 Point!" % self.guess)
             else:
-                self.scoreTeamTwo += 1
+                self.scoreTeamTwo = self.scoreTeamTwo + 1
+                self.ui.kiGuess.setText("Oh, i know, the Word is: %s. Team 2 get 1 Point!" % self.guess)
+        else:
+            self.ui.kiGuess.setText("Sorry, i couldn't guess the word!")
 
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.checkGameEnd()
 
     def checkGameEnd(self):
-        if self.scoreTeamOne == 3:
-            print("Game End, Team 1 won")
+        if self.scoreTeamOne == self.winningPoints:
+            self.ui.kiGuess.setText("Team 1 has %s Points. Team 1 won!" % self.winningPoints)
             self.gameRunning = False
-        elif self.scoreTeamTwo == 3:
-            print("Game End, Team 2 won")
+            self.ui.startGame.setEnabled(False)
+        elif self.scoreTeamTwo == self.winningPoints:
+            self.ui.kiGuess.setText("Team 2 has %s Points. Team 2 won!" % self.winningPoints)
             self.gameRunning = False
+            self.ui.startGame.setEnabled(False)
         self.roundRunning = False
         self.ui.startGame.setEnabled(True)
         self.cw.gameRuns = False
@@ -360,7 +395,7 @@ class Painter(QtWidgets.QMainWindow):
                 pyautogui.mouseUp(button="left")
 
 
-def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
+def connect_wiimote(btaddr="18:2a:7b:f3:f7:78", attempt=0):
     if len(btaddr) == 17:
         print("connecting wiimote " + btaddr + "..")
         w = None
