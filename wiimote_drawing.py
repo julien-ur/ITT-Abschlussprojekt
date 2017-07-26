@@ -1,5 +1,6 @@
 from PyQt5 import QtCore
 import pylab as pl
+import scipy
 import sys
 import time
 from threading import Timer,Thread,Event
@@ -37,8 +38,8 @@ class WiimoteDrawing:
         self.wiimote = wiimote
         self._acc_vals = []
         self._ir_data = []
-        self.buffer_size = 5
-        self.buffer = [0] * self.buffer_size
+        self._buffer_size = 5
+        self._buffer = [(-1, -1)] * self._buffer_size
         self._callbacks = []
 
         self.update_timer_stop_flag = Event()
@@ -48,7 +49,7 @@ class WiimoteDrawing:
         self.update_all_sensors()
         drawing_point = self.compute_drawing_point()
         buffered_point = self.moving_average_buffer(drawing_point)
-        self._notify_callbacks(buffered_point)
+        self._notify_callbacks(drawing_point)
 
     def update_all_sensors(self):
         if self.wiimote is None:
@@ -63,12 +64,18 @@ class WiimoteDrawing:
         self._ir_data = ir_data
         drawing_point = self.compute_drawing_point()
         buffered_point = self.moving_average_buffer(drawing_point)
-        self._notify_callbacks(buffered_point)
+        self._notify_callbacks(drawing_point)
 
     def moving_average_buffer(self, sample):
-        self.buffer.append(sample)
-        self.buffer = self.buffer[-self.buffer_size:]
-        return sum(self.buffer) / len(self.buffer)
+        if not sample:
+            self._buffer.append(self._buffer[self._buffer_size-2])
+        else:
+            self._buffer.append(sample)
+        print(sample)
+        self._buffer = self._buffer[-self._buffer_size:]
+        print(self._buffer)
+        scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, mode="mirror")
+        return self._buffer[self._buffer_size-1]
 
     def register_callback(self, func):
         self._callbacks.append(func)
@@ -125,7 +132,7 @@ class WiimoteDrawing:
         xmin_point, xmax_point, ymin_point, ymax_point = [(-1, -1) for p in range(4)]
 
         #ir_points = [(582, 477), (947, 311), (507, 314), (841, 143)]
-        #print("raw", ir_points)
+        print("raw", ir_points)
 
         for i in range(len(ir_points)):
             p = ir_points[i]
@@ -156,7 +163,7 @@ class WiimoteDrawing:
         elif quadrant_num == 1:
             sorted_tracking_points = [ymax_point, xmax_point, ymin_point, xmin_point]#[xmin_point, ymin_point, xmax_point, ymax_point]
 
-        #print("sorted", sorted_tracking_points)
+        print("sorted", sorted_tracking_points)
 
         sorted_tracking_points = self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered)
 
@@ -181,8 +188,8 @@ class WiimoteDrawing:
             lowest_avoidance_rating = 1000
 
             if len(indices) > 2:
-                #print("more than 2 boundary values are identical. " +
-                    #  "that shouldn't happen, something's terrible wrong here :(")
+                print("more than 2 boundary values are identical. " +
+                      "that shouldn't happen, something's terrible wrong here :(")
                 return
 
             for i in indices:
@@ -201,15 +208,15 @@ class WiimoteDrawing:
             boundary_type = point_order_dict_list[quadrant_num][faulty_point_index][1]
             search_list = x_list_asc if (order_axis == "x") else y_list_asc
             closest_similar_value = search_list[1] if (boundary_type == "min") else search_list[len(sorted_tracking_points) - 2]
-            #print(faulty_point)
-            #print(order_axis, boundary_type)
-            #print(closest_similar_value)
+            print(faulty_point)
+            print(order_axis, boundary_type)
+            print(closest_similar_value)
 
             for p in ir_points:
                 order_axis_val = p[0] if (order_axis == "x") else p[1]
                 if order_axis_val == closest_similar_value:
                     sorted_tracking_points[faulty_point_index] = p
-                    #print("corrected", sorted_tracking_points)
+                    print("corrected", sorted_tracking_points)
 
         duplicate_points = self.list_duplicates(sorted_tracking_points)
 
@@ -262,11 +269,11 @@ class WiimoteDrawing:
         max_x = self.DEST_W - origin_x
         max_y = self.DEST_H - origin_y
         '''
-        #print("IR", self.IR_CAM_X, self.IR_CAM_Y)
-        #print("rectangle", rectangle_long_side_dist, rectangle_short_side_dist)
-        #print("diff", rectangle_to_sensor_diff_x, rectangle_to_sensor_diff_y)
-        #print("origin", origin_x, origin_y)
-        #print("dest", self.DEST_W, self.DEST_H)
+        print("IR", self.IR_CAM_X, self.IR_CAM_Y)
+        print("rectangle", rectangle_long_side_dist, rectangle_short_side_dist)
+        print("diff", rectangle_to_sensor_diff_x, rectangle_to_sensor_diff_y)
+        print("origin", origin_x, origin_y)
+        print("dest", self.DEST_W, self.DEST_H)
         '''
         dx1, dy1 = origin_x, origin_y
         dx2, dy2 = max_x, origin_y
@@ -299,5 +306,5 @@ class WiimoteDrawing:
         x = x / z
         y = y / z
 
-        #print("drawing point", x, y)
+        print("drawing point", x, y)
         return x, y
