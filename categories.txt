@@ -5,7 +5,7 @@ campfire
 clock 
 guitar
 hot dog
-lighthouse 
+lighthouse
 octopus
 penguin
 spreadsheet 
