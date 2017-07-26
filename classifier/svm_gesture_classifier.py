@@ -63,7 +63,7 @@ if __name__ == "__main__":
         categories.append(1)
 
         svm_recognizer = SimpleGestureRecognizer()
-        svm_recognizer.train_classifier()
+        svm_recognizer.train_classifier(training_set, categories)
         svm_recognizer.save_classifier('gesture')
     except FileNotFoundError:
         print("File not found")

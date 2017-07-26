@@ -5,6 +5,7 @@ import classifier.quickdraw_npy_bitmap_helper as helper
 import classifier.itt_draw_cnn as draw
 import wiimote
 import wiimote_drawing
+import images.images_rc
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport, Qt, QtTest
 from PyQt5.QtGui import qRgb
@@ -43,7 +44,7 @@ class ScribbleArea(QtWidgets.QWidget):
         self.modified = False
         self.scribbling = False
         self.myPenWidth = 3
-        self.myPenColor = QtCore.Qt.black
+        self.myPenColor = QtCore.Qt.white
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
 
@@ -68,7 +69,7 @@ class ScribbleArea(QtWidgets.QWidget):
         self.myPenWidth = newWidth
 
     def clearImage(self):
-        self.image.fill(QtGui.qRgb(255, 255, 255))
+        self.image.fill(QtGui.qRgb(0, 0, 0))
         self.modified = True
         self.update()
 
@@ -145,7 +146,7 @@ class ScribbleArea(QtWidgets.QWidget):
             return
 
         newImage = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
-        newImage.fill(qRgb(255, 255, 255))
+        newImage.fill(qRgb(0, 0, 0))
         painter = QtGui.QPainter(newImage)
         painter.drawImage(QtCore.QPoint(0, 0), image)
         self.image = newImage
@@ -200,6 +201,7 @@ class Painter(QtWidgets.QMainWindow):
         self.show()
         self.prHelper = helper.QuickDrawHelper()
         self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
+        self.trainModel.load_model("classifier/draw_game_model.tfl")
         wiimote.buttons.register_callback(self.cw.buttonEvents)
         wiiDraw.register_callback(self.cw.setMousePos)
         wiiDraw.start_processing()
@@ -214,6 +216,12 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.ui.blueTeam.hide()
+        backgroundImage = QtGui.QPixmap(':/background/paper.jpg')  # resource path starts with ':'
+        redTeamIcon = QtGui.QPixmap(':/teamDots/redDot.png')  # resource path starts with ':'
+        blueTeamIcon = QtGui.QPixmap(':/teamDots/blueDot.png')  # resource path starts with ':'
+        self.ui.startScreen.setPixmap(backgroundImage)
+        self.ui.redTeam.setPixmap(redTeamIcon)
+        self.ui.blueTeam.setPixmap(blueTeamIcon)
 
     def startGaming(self):
         self.ui.title.hide()
@@ -243,7 +251,7 @@ class Painter(QtWidgets.QMainWindow):
 
             self.roundWon = False
             self.roundRunning = True
-            self.currentWord = random.choice(words).title()
+            self.currentWord = "clock" #random.choice(words)
             self.ui.timer.display(self.time)
             self.ui.category.setText(self.currentWord)
             self.clearImage()

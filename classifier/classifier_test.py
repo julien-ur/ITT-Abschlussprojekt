@@ -2,27 +2,28 @@ import tflearn
 import itt_draw_cnn as cnn
 import quickdraw_npy_bitmap_helper as qdh
 import os
+from PyQt5 import QtGui
 from PIL import Image
+import numpy as np
+import qimage2ndarray
 
 FILE_PATH = '/home/tuan/PycharmProjects/ITT-Abschlussprojekt/classifier/TrainingData/full_numpy_bitmap_umbrella.npy'
-NUM_TESTS = 1000
+NUM_TESTS = 50000
 
-cnn_model = cnn.ITTDrawGuesserCNN(8)
-cnn_model.load_model('trained_model/test.tfl')
+cnn_model = cnn.ITTDrawGuesserCNN(15)
+cnn_model.load_model('draw_game_model.tfl')
 qh = qdh.QuickDrawHelper()
 data = qh.load_from_file(FILE_PATH)
+#image = qh.reshape_to_cnn_input_format(data[0])
+#image = QtGui.QImage(700, 600, QtGui.QImage.Format_RGB32)
+#image.fill(QtGui.qRgb(255, 0, 55))
+#image_array = qimage2ndarray.rgb_view(image)
+image = Image.open('test.png')
+image_array = np.array(image)
+#result = cnn_model.predict(image_array)
+print(data[20001].shape)
+result = cnn_model.predict(data[20001])
+result_label = qh.get_label(result)
+print(result_label)
 
-for i in range(NUM_TESTS):
-    image = qh.reshape_to_cnn_input_format(data[i])
-    result = cnn_model.predict(image)
-    result_label = qh.get_label(list(result[0]).index(max(result[0])))
-    print(result_label)
-
-# directory name of current script
-plakat = Image.new('L', (28, 28))
-plakat.putdata(data[10000])
-
-cwd = os.path.dirname(os.path.realpath(__file__))
-save_location = os.path.join(cwd, 'image.png')
-plakat.save(save_location)
 
