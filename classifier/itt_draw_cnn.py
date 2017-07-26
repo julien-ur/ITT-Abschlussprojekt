@@ -178,7 +178,6 @@ class ITTDrawGuesserCNN:
             image = np.array(image)
 
             image = self.boost_non_black_pixels(image)
-            print(image)
             return np.array(image)
 
     def boost_non_black_pixels(self, image):
