@@ -50,13 +50,12 @@ if __name__ == "__main__":
     try:
         delete_gesture_path = sys.argv[1]
         dummy_path = sys.argv[2]
-
+        save_path = sys.argv[3]
         delete_gesture_file = open(delete_gesture_path, 'r').read()
         delete_gesture_data = eval(delete_gesture_file)
 
         dummy_file = open(dummy_path, 'r').read()
-        dummy_data = eval(dummy_file
-                          )
+        dummy_data = eval(dummy_file)
         training_set.append(delete_gesture_data)
         categories.append(0)
         training_set.append(dummy_data)
@@ -64,7 +63,7 @@ if __name__ == "__main__":
 
         svm_recognizer = SimpleGestureRecognizer()
         svm_recognizer.train_classifier(training_set, categories)
-        svm_recognizer.save_classifier('gesture')
+        svm_recognizer.save_classifier(save_path)
     except FileNotFoundError:
         print("File not found")
     pass
