@@ -10,9 +10,9 @@ from PIL import Image
 # Helper class with functions for the quickdraw npy data
 class QuickDrawHelper:
     # Max samples per category
-    MAX_SAMPLES = 20000
-    TEST_SAMPLE_SIZE = 2000
-    DICT_FILEPATH = 'classifier/cat_dict.txt'
+    MAX_SAMPLES = 100000
+    TEST_SAMPLE_SIZE = 10000
+    DICT_FILEPATH = 'cat_dict.txt'
 
     def __init__(self):
         self.data_set = {}
@@ -39,11 +39,13 @@ class QuickDrawHelper:
                 if file.endswith('.npy'):
                     npy_path = os.path.join(folder_path, file)
                     loaded_bitmap_arrays = np.load(npy_path)
-                    data_training, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays, cat_id)
+                    # data_training, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays, cat_id)
+                    data_training = loaded_bitmap_arrays
+                    cat = [cat_id]*len(data_training)
                     x.extend(data_training)
                     y.extend(cat)
-                    x_test.extend(data_test)
-                    y_test.extend(cat_test)
+                    #x_test.extend(data_test)
+                    #y_test.extend(cat_test)
                     self.label_dict[cat_id] = file[:-4].replace('full_numpy_bitmap_', '')
                     print("loading file %s", file)
                     cat_id += 1
@@ -85,11 +87,15 @@ class QuickDrawHelper:
         return len(self.label_dict)
 
     def get_data_from_bitmap_arrays(self, arrays, cat_id):
-        data = arrays[:self.MAX_SAMPLES]
-        data_test = arrays[self.MAX_SAMPLES:self.MAX_SAMPLES+self.TEST_SAMPLE_SIZE]
-        cat_list = [cat_id]*len(data)
+        train_size = int(len(arrays)*0.9)
+        data_train = arrays[:train_size]
+        data_test = arrays[train_size:]
+        cat_list = [cat_id]*len(data_train)
         cat_list_test = [cat_id]*len(data_test)
-        return data, cat_list, data_test, cat_list_test
+        print("Size full data: %d", len(arrays))
+        print("Size training data: %d %d", len(data_train), len(cat_list))
+        print("Size test data: %d %d", len(data_test), len(cat_list_test))
+        return data_train, cat_list, data_test, cat_list_test
 
 # Create png to look at the images/process them elsewhere
 if __name__ == "__main__":

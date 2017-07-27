@@ -44,7 +44,7 @@ class ITTDrawGuesserCNN:
     DEFAULT_EPOCH = 10
 
     # Couldn't make tensorflow-gpu work, recognizes gpu but crashes
-    use_cpu_only = True
+    use_cpu_only = False
 
     def __init__(self, num_categories):
         # Dynamic output node number
@@ -72,22 +72,22 @@ class ITTDrawGuesserCNN:
         graph = input_data(shape=[None, 28, 28, 1], data_preprocessing=pre_process_data)
 
         # Convolutional Layer 1: 32 nodes, 3x3 pixel filter size
-        graph = conv_2d(graph, 32, 3, activation='relu', regularizer="L2")
+        graph = conv_2d(graph, 32, 5, activation='relu', regularizer="L2")
 
         # Downsampling with 2x2 filter
         graph = max_pool_2d(graph, 2)
 
-        graph = local_response_normalization(graph)
+        # graph = local_response_normalization(graph)
 
         # Convolutional Layer 2: 64 nodes, 3x3 pixel filter size
-        graph = conv_2d(graph, 64, 3, activation='relu', regularizer="L2")
+        graph = conv_2d(graph, 64, 5, activation='relu', regularizer="L2")
 
         # Downsampling with 2x2 filter
         graph = max_pool_2d(graph, 2)
 
-        graph = local_response_normalization(graph)
+        # graph = local_response_normalization(graph)
 
-        # Fully connected layer 1, 128 neurons
+        '''# Fully connected layer 1, 128 neurons
         graph = fully_connected(graph, 128, activation='relu')
 
         # Set dropout to 0.5; throwing away random data to prevent over-fitting
@@ -97,10 +97,10 @@ class ITTDrawGuesserCNN:
         graph = fully_connected(graph, 256, activation='relu')
 
         # Set dropout to 0.5; throwing away random data to prevent over-fitting
-        graph = dropout(graph, 0.5)
+        graph = dropout(graph, 0.5)'''
 
         # Fully connected layer 2, 256 neurons
-        graph = fully_connected(graph, 512, activation='relu')
+        graph = fully_connected(graph, 1024, activation='relu')
 
         # Set dropout to 0.5; throwing away random data to prevent over-fitting
         graph = dropout(graph, 0.5)
@@ -118,6 +118,7 @@ class ITTDrawGuesserCNN:
         return graph
 
     def _reshape_images(self, array):
+        array = array/255
         return array.reshape([-1, 28, 28, 1])
 
     # Set custom checkpoint filepath
@@ -142,10 +143,10 @@ class ITTDrawGuesserCNN:
         if self.use_cpu_only:
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
             with tf.device('/cpu:0'):
-                self.model.fit(x, y, n_epoch=self.epoch, shuffle=True, validation_set=(x_test, y_test),
+                self.model.fit(x, y, n_epoch=self.epoch, shuffle=True, validation_set=0.1,
                                show_metric=True, snapshot_epoch=True)
         else:
-            self.model.fit(x, y, n_epoch=self.epoch, shuffle=True, validation_set=(x_test, y_test),
+            self.model.fit(x, y, n_epoch=self.epoch, shuffle=True, validation_set=0.1,
                            show_metric=True, snapshot_epoch=True)
 
     # Save model to a file after completing training
@@ -185,6 +186,6 @@ class ITTDrawGuesserCNN:
             for j in range(len(image[0])):
                 if image[i][j] != 0:
                     image[i][j] = 255
-        image = Image.fromarray(image, 'L')
-        image.save('whited.png')
-        return np.array(image)
+        #image = Image.fromarray(image, 'L')
+        #image.save('whited.png')
+        return image
