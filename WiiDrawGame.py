@@ -195,8 +195,8 @@ class Painter(QtWidgets.QMainWindow):
     def __init__(self, wiimote, wiiDraw):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
-        self.time = 60
-        self.winningPoints = 1
+        self.time = 30
+        self.winningPoints = 2
         self.currentWord = ""
         self.gameRunning = True
         self.roundWon = False
@@ -294,7 +294,7 @@ class Painter(QtWidgets.QMainWindow):
             self.cw.gameRuns = True
             self.roundWon = False
             self.roundRunning = True
-            self.currentWord = "umbrella" #random.choice(words)
+            self.currentWord = random.choice(words)
             self.guess = ""
             self.ui.timer.display(self.time)
             self.ui.category.setText(self.currentWord)

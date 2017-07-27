@@ -1,15 +1,6 @@
 angel
 banana 
-beach
-campfire 
-clock 
-guitar
-hot dog
+clock
 lighthouse
-octopus
-penguin
-spreadsheet 
-strawberry
+spreadsheet
 umbrella
-whale 
-zebra
