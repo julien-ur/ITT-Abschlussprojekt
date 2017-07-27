@@ -195,8 +195,8 @@ class Painter(QtWidgets.QMainWindow):
     def __init__(self, wiimote, wiiDraw):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
-        self.time = 60
-        self.winningPoints = 1
+        self.time = 30
+        self.winningPoints = 2
         self.currentWord = ""
         self.gameRunning = True
         self.roundWon = False
@@ -251,7 +251,7 @@ class Painter(QtWidgets.QMainWindow):
     def startNewGame(self):
         self.setTitleScreen()
         self.time = 60
-        self.currentWord = ""
+        self.currentWord = "Term"
         self.roundWon = False
         self.roundRunning = False
         self.gameRunning = True
@@ -277,7 +277,7 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.secondsSlider.show()
         self.ui.secondsSlider.raise_()
         self.ui.kiGuess.setText("")
-        self.ui.category.setText("Term")
+        self.ui.category.setText(self.currentWord)
 
     def startNewRound(self):
         if self.gameRunning:
@@ -294,7 +294,7 @@ class Painter(QtWidgets.QMainWindow):
             self.cw.gameRuns = True
             self.roundWon = False
             self.roundRunning = True
-            self.currentWord = "umbrella" #random.choice(words)
+            self.currentWord = random.choice(words)
             self.guess = ""
             self.ui.timer.display(self.time)
             self.ui.category.setText(self.currentWord)
@@ -336,10 +336,10 @@ class Painter(QtWidgets.QMainWindow):
         if self.roundWon:
             if self.currentTeam == 1:
                 self.scoreTeamOne = self.scoreTeamOne + 1
-                self.ui.kiGuess.setText("Oh, i know, the Word is: %s. Team 1 gets 1 Point!" % self.guess)
+                self.ui.kiGuess.setText("Oh i know, the Word is: %s. Team 1 gets 1 Point!" % self.guess)
             else:
                 self.scoreTeamTwo = self.scoreTeamTwo + 1
-                self.ui.kiGuess.setText("Oh, i know, the Word is: %s. Team 2 get 1 Point!" % self.guess)
+                self.ui.kiGuess.setText("Oh i know, the Word is: %s. Team 2 get 1 Point!" % self.guess)
         else:
             self.ui.kiGuess.setText("Sorry, i couldn't guess the word!")
 
@@ -395,7 +395,7 @@ class Painter(QtWidgets.QMainWindow):
                 pyautogui.mouseUp(button="left")
 
 
-def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
+def connect_wiimote(btaddr="18:2a:7b:f3:f7:78", attempt=0):
     if len(btaddr) == 17:
         print("connecting wiimote " + btaddr + "..")
         w = None
