@@ -38,7 +38,7 @@ class WiimoteDrawing:
         self.wiimote = wiimote
         self._acc_vals = []
         self._ir_data = []
-        self._buffer_size = 20
+        self._buffer_size = 60
         self._buffer = [(-1, -1)] * self._buffer_size
         self._callbacks = []
 
@@ -64,7 +64,7 @@ class WiimoteDrawing:
         self._ir_data = ir_data
         drawing_point = self.compute_drawing_point()
         buffered_point = self.moving_average_buffer(drawing_point)
-        self._notify_callbacks(drawing_point)
+        self._notify_callbacks(buffered_point)
 
     def moving_average_buffer(self, sample):
         if not sample:

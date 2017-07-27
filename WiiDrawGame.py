@@ -211,7 +211,7 @@ class Painter(QtWidgets.QMainWindow):
         self.show()
         self.prHelper = helper.QuickDrawHelper()
         self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
-        self.trainModel.load_model("classifier/draw_game_model.tfl")
+        self.trainModel.load_model("classifier/trained_model/draw_game_model_4.tfl")
         self.svm = svm_classifier.SimpleGestureRecognizer()
         self.svm.load_classifier("classifier/svm_model.gz")
 
@@ -395,7 +395,7 @@ class Painter(QtWidgets.QMainWindow):
                 pyautogui.mouseUp(button="left")
 
 
-def connect_wiimote(btaddr="18:2a:7b:f3:f7:78", attempt=0):
+def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
     if len(btaddr) == 17:
         print("connecting wiimote " + btaddr + "..")
         w = None
