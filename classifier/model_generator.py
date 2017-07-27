@@ -38,7 +38,7 @@ if __name__ == '__main__':
             # draw_game_model_4: 90% training images per category, epoch = 10, scale 0-255 to 0-1
             #                   conv(32,5)>maxpool(2)>conv(64,5)>maxpool>fcl(1024,relu)>do(0.5)>fcl(15, softmax)
             #                   learning_rate = 0.001, val_acc ~
-            # draw_game_model_4: 90% training images per category, epoch = 10, boost_non_black, scale to 0-1
+            # draw_game_model_5: 90% training images per category, epoch = 10, boost_non_black, scale to 0-1
             #                   conv(32,5)>maxpool(2)>conv(64,5)>maxpool>fcl(1024,relu)>do(0.5)>fcl(15, softmax)
             #                   learning_rate = 0.001, val_acc ~88%
             cnn = itt_cnn.ITTDrawGuesserCNN(num_cat)
