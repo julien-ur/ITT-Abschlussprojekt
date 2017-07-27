@@ -33,11 +33,12 @@ class WiimoteDrawing:
         self.DEST_H = 1080
         self.IR_CAM_X = 1024
         self.IR_CAM_Y = 768
-        self.update_rate = 60
+        self.update_rate = 30
 
         self.wiimote = wiimote
         self._acc_vals = []
         self._ir_data = []
+
         self._buffer_size = 60
         self._buffer = [(-1, -1)] * self._buffer_size
         self._callbacks = []

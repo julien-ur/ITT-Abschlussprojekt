@@ -179,13 +179,13 @@ class ITTDrawGuesserCNN:
             image = np.array(image)
 
             image = self.boost_non_black_pixels(image)
-            return np.array(image)
+            return image
 
     def boost_non_black_pixels(self, image):
         for i in range(len(image)):
             for j in range(len(image[0])):
                 if image[i][j] != 0:
                     image[i][j] = 255
-        #image = Image.fromarray(image, 'L')
-        #image.save('whited.png')
-        return image
+        image = Image.fromarray(image, 'L')
+        image.save('whited.png')
+        return np.array(image)
