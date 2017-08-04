@@ -9,12 +9,12 @@ import os
 # Recognize simple gestures by transforming x,y,z accelerometer data (mean, fast fourier transformation) and using svm
 class SimpleGestureRecognizer:
 
-    MAX_BUFFER_SIZE = 100
+    MAX_BUFFER_SIZE = 30
     LABEL_DICT = {0: 'delete', 1: 'undo', 2: 'trash'}
 
     def __init__(self):
         self.classifier = svm.SVC()
-        self.input_buffer = []
+        self.input_buffer = np.array([])
 
     def train_classifier(self, training_data, categories):
         self.classifier.fit(training_data, categories)
@@ -35,7 +35,7 @@ class SimpleGestureRecognizer:
         self.classifier = joblib.load(file_name)
 
     def update_buffer(self, x_accel, y_accel, z_accel):
-        self.input_buffer.append((x_accel+y_accel+z_accel)/3)
+        self.input_buffer = np.append(self.input_buffer, (x_accel+y_accel+z_accel)/3)
         self.input_buffer = self.input_buffer[-self.MAX_BUFFER_SIZE:]
 
 
@@ -49,19 +49,7 @@ if __name__ == "__main__":
     categories = []
 
     try:
-        '''
-        delete_gesture_path = sys.argv[1]
-        undo_gesture_path = sys.argv[2]
-        dummy_path = sys.argv[3]
-        delete_gesture_file = open(delete_gesture_path, 'r').read()
-        delete_gesture_data = eval(delete_gesture_file)
-        dummy_file = open(dummy_path, 'r').read()
-        dummy_data = eval(dummy_file)
-        training_set.append(delete_gesture_data)
-        categories.append(0)
-        training_set.append(dummy_data)
-        categories.append(1)
-        '''
+
         gesture_folder_path = sys.argv[1]
         save_path = sys.argv[2]
         training_file_names = os.listdir(gesture_folder_path)
