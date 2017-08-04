@@ -175,6 +175,7 @@ class Painter(QtWidgets.QMainWindow):
         self.scoreTeamOne = 0
         self.scoreTeamTwo = 0
         self.guess = ""
+        pyautogui.FAILSAFE = False
         self.initUI()
         self.image_clear_count_index = self.time
         self.image_undo_count_index = self.time
@@ -302,18 +303,11 @@ class Painter(QtWidgets.QMainWindow):
                 self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
             if i%2 == 0:
                 self.cw.addSegment()
-            if i % 1 == 0:
-                print(i, self.image_clear_count_index - i)
+            if i%1 == 0:
                 gesture = self.svm.predict()
-                print(gesture)
-                if gesture == 0:
-                    print("YEAHHHHHHHHHHH!!!!")
-                if gesture == 0 and abs(self.image_clear_count_index - i) >= 1:
+                if gesture == 1 and abs(self.image_clear_count_index - i) >= 1:
                     self.image_clear_count_index = i
                     self.clearImage()
-                elif gesture == 1 and abs(self.image_undo_count_index - i) >= 1:
-                    self.image_undo_count_index = i
-                    self.cw.undo()
 
             if not self.roundWon:
                 time.sleep(1)
@@ -362,13 +356,15 @@ class Painter(QtWidgets.QMainWindow):
 
     # Set new cursor pos to a new pos
     def setMousePos(self, pos, acc):
-
+        start = time.time()
         x, y, z = acc
         self.svm.update_buffer(x, y, z)
 
         if pos == None:
             return
         QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
+        end = time.time()
+        print(end - start)
 
     # Button events for the Wiimote. Used PyAutoGui for interaction with app (link to pyautogui)
     def buttonEvents(self, report):

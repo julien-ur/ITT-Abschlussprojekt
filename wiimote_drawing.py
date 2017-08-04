@@ -41,6 +41,7 @@ class WiimoteDrawing:
 
         self._buffer_size = 60
         self._buffer = [(-1, -1)] * self._buffer_size
+        self._last_point = None
         self._callbacks = []
 
         self.update_timer_stop_flag = Event()
@@ -81,6 +82,7 @@ class WiimoteDrawing:
         # following filter only uses last point and current point
         # "trusting" the old point more than the new point by weight (0.3 means trusting new sample with 0.3
         weight = 0.3
+
         if self._last_point is None:
             self._last_point = sample
             return sample
