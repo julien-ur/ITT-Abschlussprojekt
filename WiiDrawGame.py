@@ -43,12 +43,6 @@ class ScribbleArea(QtWidgets.QWidget):
         self.drawing.append([])
         self.currentSegmentIndex = 1
 
-        # Undo Test
-        self.undoButton = QtWidgets.QPushButton("undo", self)
-        self.undoButton.clicked.connect(self.undo)
-
-        # Deactivate during debug
-        #self.gameStart = False
     def undo(self):
         self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
 
@@ -197,7 +191,7 @@ class Painter(QtWidgets.QMainWindow):
         self.backgroundSize = self.ui.startScreen.size()
         self.scaleFactorWidth = screen.width()/self.backgroundSize.width()
         self.scaleFactorHeight = screen.height()/self.backgroundSize.height()
-        self.cw.resizeCanvas(510*self.scaleFactorHeight, 670*self.scaleFactorWidth)
+        self.cw.resizeCanvas(self.ui.frame.height()*self.scaleFactorHeight, self.ui.frame.width()*self.scaleFactorWidth)
         self.uiElements = self.ui.children()
 
         for el in self.uiElements:
@@ -206,9 +200,9 @@ class Painter(QtWidgets.QMainWindow):
             else:
                 el.setGeometry(QtCore.QRect(el.x()*self.scaleFactorWidth,el.y()*self.scaleFactorHeight, el.width()*self.scaleFactorWidth, el.height()*self.scaleFactorHeight ))
 
-        wiimote.buttons.register_callback(self.buttonEvents)
-        wiiDraw.register_callback(self.setMousePos)
-        wiiDraw.start_processing()
+        #wiimote.buttons.register_callback(self.buttonEvents)
+        #wiiDraw.register_callback(self.setMousePos)
+        #wiiDraw.start_processing()
 
     # Initalize UI Elements
     def initUI(self):
@@ -226,7 +220,6 @@ class Painter(QtWidgets.QMainWindow):
         #self.ui.startScreen.setPixmap(backgroundImage)
         self.ui.redTeam.setPixmap(redTeamIcon)
         self.ui.blueTeam.setPixmap(blueTeamIcon)
-        self.ui.kiGuess.raise_()
 
     # Hide title screen elements
     def startGaming(self):
@@ -408,9 +401,9 @@ def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    wiimote = connect_wiimote()
-    wiiDraw = wiimote_drawing.init(wiimote)
-    paint = Painter(wiimote, wiiDraw)
+    #wiimote = connect_wiimote()
+    #wiiDraw = wiimote_drawing.init(wiimote)
+    paint = Painter(None, None)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
