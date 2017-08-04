@@ -40,7 +40,7 @@ class SimpleGestureRecognizer:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print("No files given. Files with fourier transformed list values needed.\n"
               "Additionally, provide file_path for saved svm model")
         sys.exit(-1)

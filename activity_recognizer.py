@@ -178,7 +178,7 @@ class SvmNode(Node):
         self.gesture_timer.start(500)
 
     def write_cat_dict_to_file(self):
-        with open("undo_gesture_fft.txt", 'w') as dict_file:
+        with open("delete_gesture_fft.txt", 'w') as dict_file:
             dict_file.write(str(list(self.freqData)))
 
     def gesture_ended(self):
