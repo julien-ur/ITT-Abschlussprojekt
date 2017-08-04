@@ -50,9 +50,11 @@ class ScribbleArea(QtWidgets.QWidget):
         # Deactivate during debug
         #self.gameStart = False
     def undo(self):
-        self.currentSegmentIndex = max(0, self.currentSegmentIndex -1)
+        self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
+
         if len(self.drawing[self.currentSegmentIndex]) == 0:
             self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
+
         self.drawImage()
 
     def resizeCanvas(self, height, width):
@@ -131,6 +133,7 @@ class ScribbleArea(QtWidgets.QWidget):
             self.drawing = self.drawing[:self.currentSegmentIndex+1]
             self.drawing[self.currentSegmentIndex] = []
         self.drawLineTo(p)
+        self.update()
         self.drawing[self.currentSegmentIndex].append(self.line)
 
     # Draws line between to points
@@ -141,7 +144,7 @@ class ScribbleArea(QtWidgets.QWidget):
         self.line = QtCore.QLine(self.lastPoint, endPoint)
         painter.drawLine(self.line)
         rad = self.myPenWidth / 2 + 2
-        self.update(QtCore.QRect(self.lastPoint, endPoint).normalized().adjusted(-rad, -rad, +rad, +rad))
+        #self.update(QtCore.QRect(self.lastPoint, endPoint).normalized().adjusted(-rad, -rad, +rad, +rad))
         self.lastPoint = QtCore.QPoint(endPoint)
 
     def resizeImage(self, image, newSize):

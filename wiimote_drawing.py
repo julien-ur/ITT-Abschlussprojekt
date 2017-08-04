@@ -33,7 +33,7 @@ class WiimoteDrawing:
         self.DEST_H = 1080
         self.IR_CAM_X = 1024
         self.IR_CAM_Y = 768
-        self.update_rate = 30
+        self.update_rate = 60
 
         self.wiimote = wiimote
         self._acc_vals = []
