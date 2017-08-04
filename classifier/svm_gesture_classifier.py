@@ -3,13 +3,14 @@ from scipy import fft
 from sklearn import svm
 from sklearn.externals import joblib
 import sys
+import os
 
 
 # Recognize simple gestures by transforming x,y,z accelerometer data (mean, fast fourier transformation) and using svm
 class SimpleGestureRecognizer:
 
     MAX_BUFFER_SIZE = 100
-    LABEL_DICT = {0: 'delete', 1: 'trash'}
+    LABEL_DICT = {0: 'delete', 1: 'undo', 2: 'trash'}
 
     def __init__(self):
         self.classifier = svm.SVC()
@@ -48,22 +49,39 @@ if __name__ == "__main__":
     categories = []
 
     try:
+        '''
         delete_gesture_path = sys.argv[1]
-        dummy_path = sys.argv[2]
-        save_path = sys.argv[3]
+        undo_gesture_path = sys.argv[2]
+        dummy_path = sys.argv[3]
         delete_gesture_file = open(delete_gesture_path, 'r').read()
         delete_gesture_data = eval(delete_gesture_file)
-
         dummy_file = open(dummy_path, 'r').read()
         dummy_data = eval(dummy_file)
         training_set.append(delete_gesture_data)
         categories.append(0)
         training_set.append(dummy_data)
         categories.append(1)
+        '''
+        gesture_folder_path = sys.argv[1]
+        save_path = sys.argv[2]
+        training_file_names = os.listdir(gesture_folder_path)
+        for file_path in training_file_names:
+            if file_path.endswith('gesture_fft.txt'):
+                if file_path.startswith(('delete', 'undo', 'dummy')):
+                    file = open(file_path, 'r').read()
+                    gesture_data = eval(file)
+                    training_set.append(gesture_data)
+                    if file_path.startswith('delete'):
+                        categories.append(0)
+                    elif file_path.startswith('undo'):
+                        categories.append(1)
+                    else:
+                        categories.append(2)
+
+
 
         svm_recognizer = SimpleGestureRecognizer()
         svm_recognizer.train_classifier(training_set, categories)
         svm_recognizer.save_classifier(save_path)
     except FileNotFoundError:
         print("File not found")
-    pass
