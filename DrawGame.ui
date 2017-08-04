@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1002</width>
-    <height>694</height>
+    <width>999</width>
+    <height>701</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,7 +23,7 @@
    <property name="geometry">
     <rect>
      <x>260</x>
-     <y>610</y>
+     <y>10</y>
      <width>681</width>
      <height>71</height>
     </rect>
@@ -45,64 +45,6 @@
    <property name="alignment">
     <set>Qt::AlignCenter</set>
    </property>
-  </widget>
-  <widget class="QWidget" name="commandContainer" native="true">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>20</y>
-     <width>281</width>
-     <height>131</height>
-    </rect>
-   </property>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>10</y>
-      <width>241</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Bitstream Charter</family>
-      <pointsize>16</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Current Term:</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="category">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>241</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Bitstream Charter</family>
-      <pointsize>20</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Term</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
   </widget>
   <widget class="QLabel" name="team1Text">
    <property name="geometry">
@@ -175,24 +117,39 @@
   <widget class="QFrame" name="frame">
    <property name="geometry">
     <rect>
-     <x>340</x>
+     <x>137</x>
      <y>150</y>
-     <width>530</width>
-     <height>450</height>
+     <width>673</width>
+     <height>511</height>
     </rect>
    </property>
+   <property name="minimumSize">
+    <size>
+     <width>673</width>
+     <height>511</height>
+    </size>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
    <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
+    <enum>QFrame::NoFrame</enum>
    </property>
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
+   <property name="lineWidth">
+    <number>4</number>
+   </property>
+   <zorder>startScreen</zorder>
+   <zorder>startScreen</zorder>
+   <zorder>startScreen</zorder>
   </widget>
   <widget class="QPushButton" name="startGame">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>250</y>
+     <x>830</x>
+     <y>330</y>
      <width>151</width>
      <height>51</height>
     </rect>
@@ -204,8 +161,8 @@
   <widget class="QPushButton" name="clear">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>320</y>
+     <x>830</x>
+     <y>390</y>
      <width>151</width>
      <height>51</height>
     </rect>
@@ -217,9 +174,9 @@
   <widget class="QLCDNumber" name="timer">
    <property name="geometry">
     <rect>
-     <x>34</x>
-     <y>136</y>
-     <width>131</width>
+     <x>220</x>
+     <y>60</y>
+     <width>141</width>
      <height>51</height>
     </rect>
    </property>
@@ -231,7 +188,7 @@
    <property name="geometry">
     <rect>
      <x>190</x>
-     <y>80</y>
+     <y>200</y>
      <width>611</width>
      <height>61</height>
     </rect>
@@ -251,8 +208,8 @@
   <widget class="QPushButton" name="startButton">
    <property name="geometry">
     <rect>
-     <x>290</x>
-     <y>390</y>
+     <x>280</x>
+     <y>500</y>
      <width>411</width>
      <height>81</height>
     </rect>
@@ -272,10 +229,10 @@
   <widget class="QSlider" name="secondsSlider">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>330</y>
-     <width>271</width>
-     <height>21</height>
+     <x>330</x>
+     <y>430</y>
+     <width>311</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="minimum">
@@ -294,8 +251,8 @@
   <widget class="QLCDNumber" name="selectSeconds">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>250</y>
+     <x>370</x>
+     <y>360</y>
      <width>131</width>
      <height>51</height>
     </rect>
@@ -310,8 +267,8 @@
   <widget class="QLabel" name="secondText">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>200</y>
+     <x>320</x>
+     <y>310</y>
      <width>321</width>
      <height>31</height>
     </rect>
@@ -331,8 +288,8 @@
   <widget class="QPushButton" name="endGame">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>460</y>
+     <x>830</x>
+     <y>450</y>
      <width>151</width>
      <height>51</height>
     </rect>
@@ -347,17 +304,20 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1001</width>
-     <height>701</height>
+     <x>-1</x>
+     <y>-6</y>
+     <width>1011</width>
+     <height>711</height>
     </rect>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap resource="images/images.qrc">:/background/paper.jpg</pixmap>
+    <pixmap>../../Desktop/table.jpg</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QLabel" name="redTeam">
@@ -373,7 +333,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap resource="images/images.qrc">:/teamDots/redDot.png</pixmap>
+    <pixmap>:/teamDots/redDot.png</pixmap>
    </property>
   </widget>
   <widget class="QLabel" name="blueTeam">
@@ -389,11 +349,58 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap resource="images/images.qrc">:/teamDots/blueDot.png</pixmap>
+    <pixmap>:/teamDots/blueDot.png</pixmap>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>810</x>
+     <y>200</y>
+     <width>181</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Bitstream Charter</family>
+     <pointsize>16</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Current Term:</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="category">
+   <property name="geometry">
+    <rect>
+     <x>820</x>
+     <y>250</y>
+     <width>67</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Bitstream Charter</family>
+     <pointsize>20</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Term</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
   <zorder>kiGuess</zorder>
-  <zorder>commandContainer</zorder>
   <zorder>team1Text</zorder>
   <zorder>team1Score</zorder>
   <zorder>team2Score</zorder>
@@ -405,12 +412,14 @@
   <zorder>endGame</zorder>
   <zorder>redTeam</zorder>
   <zorder>blueTeam</zorder>
+  <zorder>label_2</zorder>
+  <zorder>category</zorder>
   <zorder>startScreen</zorder>
   <zorder>title</zorder>
-  <zorder>secondsSlider</zorder>
-  <zorder>secondText</zorder>
   <zorder>startButton</zorder>
   <zorder>selectSeconds</zorder>
+  <zorder>secondsSlider</zorder>
+  <zorder>secondText</zorder>
  </widget>
  <resources>
   <include location="images/images.qrc"/>
