@@ -175,11 +175,11 @@ class SvmNode(Node):
             self.gestures.append(self.gestureName)
             self.update_gesture_dropdown()
 
-        self.gesture_timer.start(5000)
+        self.gesture_timer.start(500)
 
     def write_cat_dict_to_file(self):
-        with open("dummy_gesture_fft.txt", 'w') as dict_file:
-            dict_file.write(str(self.freqData))
+        with open("undo_gesture_fft.txt", 'w') as dict_file:
+            dict_file.write(str(list(self.freqData)))
 
     def gesture_ended(self):
         self.learnButton.setText("Start Gesture")

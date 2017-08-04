@@ -75,7 +75,7 @@ class WiimoteDrawing:
         #print(sample)
         self._buffer = self._buffer[-self._buffer_size:]
         #print(self._buffer)
-        scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, output=self._buffer, mode="mirror")
+        #self._buffer = list(scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, mode="mirror"))
         return self._buffer[self._buffer_size-1]
 
     def register_callback(self, func):
@@ -160,9 +160,9 @@ class WiimoteDrawing:
         quadrant_num = 0 if (xmin_ymin_dist < xmin_ymax_dist) else 1
 
         if quadrant_num == 0:
-            sorted_tracking_points = [xmin_point, ymax_point, xmax_point, ymin_point]#[ymin_point, xmax_point, ymax_point, xmin_point]
+            sorted_tracking_points = [ymin_point, xmax_point, ymax_point, xmin_point]
         elif quadrant_num == 1:
-            sorted_tracking_points = [ymax_point, xmax_point, ymin_point, xmin_point]#[xmin_point, ymin_point, xmax_point, ymax_point]
+            sorted_tracking_points = [xmin_point, ymin_point, xmax_point, ymax_point]
 
         #print("sorted", sorted_tracking_points)
 
@@ -306,6 +306,8 @@ class WiimoteDrawing:
         # Step 7: dehomogenization
         x = x / z
         y = y / z
+
+        y = self.DEST_H - y
 
         #print("drawing point", x, y)
         return x, y

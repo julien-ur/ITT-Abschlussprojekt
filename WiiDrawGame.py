@@ -180,6 +180,7 @@ class Painter(QtWidgets.QMainWindow):
         self.guess = ""
         self.initUI()
         self.image_clear_count_index = self.time
+        self.image_undo_count_index = self.time
         self.cw = ScribbleArea(self.ui.frame)
         self.show()
         self.prHelper = helper.QuickDrawHelper()
@@ -194,18 +195,16 @@ class Painter(QtWidgets.QMainWindow):
         self.scaleFactorHeight = screen.height()/self.backgroundSize.height()
         self.cw.resizeCanvas(510*self.scaleFactorHeight, 670*self.scaleFactorWidth)
         self.uiElements = self.ui.children()
+
         for el in self.uiElements:
             if isinstance(el, QtWidgets.QLayout):
-                print(el)
                 continue
             else:
-                print(el)
                 el.setGeometry(QtCore.QRect(el.x()*self.scaleFactorWidth,el.y()*self.scaleFactorHeight, el.width()*self.scaleFactorWidth, el.height()*self.scaleFactorHeight ))
 
-
-            #wiimote.buttons.register_callback(self.buttonEvents)
-        #wiiDraw.register_callback(self.setMousePos)
-        #wiiDraw.start_processing()
+        wiimote.buttons.register_callback(self.buttonEvents)
+        wiiDraw.register_callback(self.setMousePos)
+        wiiDraw.start_processing()
 
     # Initalize UI Elements
     def initUI(self):
@@ -309,9 +308,17 @@ class Painter(QtWidgets.QMainWindow):
                 self.cw.addSegment()
             if i % 1 == 0:
                 print(i, self.image_clear_count_index - i)
-                if self.svm.predict() == 0 and self.image_clear_count_index - i > 2:
+                gesture = self.svm.predict()
+                print(gesture)
+                if gesture == 0:
+                    print("YEAHHHHHHHHHHH!!!!")
+                if gesture == 0 and abs(self.image_clear_count_index - i) >= 1:
                     self.image_clear_count_index = i
                     self.clearImage()
+                elif gesture == 1 and abs(self.image_undo_count_index - i) >= 1:
+                    self.image_undo_count_index = i
+                    self.cw.undo()
+
             if not self.roundWon:
                 time.sleep(1)
                 self.ui.timer.display(i)
@@ -378,7 +385,7 @@ class Painter(QtWidgets.QMainWindow):
                 pyautogui.mouseUp(button="left")
 
 # Establish connection to Wiimote
-def connect_wiimote(btaddr="18:2a:7b:f3:f7:78", attempt=0):
+def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
     if len(btaddr) == 17:
         print("connecting wiimote " + btaddr + "..")
         w = None
@@ -402,9 +409,9 @@ def connect_wiimote(btaddr="18:2a:7b:f3:f7:78", attempt=0):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    #wiimote = connect_wiimote()
-    #wiiDraw = wiimote_drawing.init(wiimote)
-    paint = Painter(None, None)
+    wiimote = connect_wiimote()
+    wiiDraw = wiimote_drawing.init(wiimote)
+    paint = Painter(wiimote, wiiDraw)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
