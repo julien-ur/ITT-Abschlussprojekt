@@ -75,7 +75,7 @@ class WiimoteDrawing:
         #print(sample)
         self._buffer = self._buffer[-self._buffer_size:]
         #print(self._buffer)
-        scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, mode="mirror")
+        scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, output=self._buffer, mode="mirror")
         return self._buffer[self._buffer_size-1]
 
     def register_callback(self, func):

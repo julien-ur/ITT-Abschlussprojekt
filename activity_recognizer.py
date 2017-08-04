@@ -23,7 +23,7 @@ class BufferNode(CtrlNode):
     """
     nodeName = "Buffer"
     uiTemplate = [
-        ('size', 'spin', {'value': 300.0, 'step': 1.0, 'bounds': [100.0, 10000.0]}),
+        ('size', 'spin', {'value': 300.0, 'step': 1.0, 'bounds': [10.0, 10000.0]}),
     ]
 
     def __init__(self, name):
