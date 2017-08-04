@@ -3,7 +3,6 @@ import os
 import sys
 from PIL import Image
 
-# script to convert npy grayscale bitmap file from quickdraw dataset to png
 # https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/numpy_bitmap/?pli=1
 
 

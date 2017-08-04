@@ -24,6 +24,7 @@ if __name__ == '__main__':
             # not using tf.one_hot to avoid importing tensorflow library
             data_set['y'] = np.eye(num_cat)[np.array(y)]
             # data_set['y_test'] = np.eye(num_cat)[np.array(y_test)]
+
             # trained with:
             # draw_game_model: 20000 training images per category, epoch = 10
             #                   conv(32,3)>maxpool(2)>lrn>conv(64,3)>maxpool(2)>lrn>
