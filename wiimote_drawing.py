@@ -68,7 +68,7 @@ class WiimoteDrawing:
         self._notify_callbacks(buffered_point)
 
     def moving_average_buffer(self, sample):
-        if not sample:
+        '''if not sample:
             self._buffer.append(self._buffer[self._buffer_size-2])
         else:
             self._buffer.append(sample)
@@ -76,7 +76,20 @@ class WiimoteDrawing:
         self._buffer = self._buffer[-self._buffer_size:]
         #print(self._buffer)
         #self._buffer = list(scipy.ndimage.uniform_filter(self._buffer, size=self._buffer_size, mode="mirror"))
-        return self._buffer[self._buffer_size-1]
+        return self._buffer[self._buffer_size-1]'''
+
+        # following filter only uses last point and current point
+        # "trusting" the old point more than the new point by weight (0.3 means trusting new sample with 0.3
+        weight = 0.3
+        if self._last_point is None:
+            self._last_point = sample
+            return sample
+        else:
+            filtered_x = self._last_point[0] * (1 - weight) + sample[0] * weight
+            filtered_y = self._last_point[1] * (1 - weight) + sample[1] * weight
+            filtered_point = (filtered_x, filtered_y)
+            self._last_point = filtered_point
+            return filtered_point
 
     def register_callback(self, func):
         self._callbacks.append(func)
