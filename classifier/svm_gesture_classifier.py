@@ -23,7 +23,7 @@ class SimpleGestureRecognizer:
 
         if len(self.input_buffer) < self.MAX_BUFFER_SIZE:
             print("Buffer not full, prediction may be faulty")
-            return 1
+            return self.LABEL_DICT.get('trash')
 
         fft_transformed_data = np.abs(fft(self.input_buffer) / len(self.input_buffer))[1:len(self.input_buffer) // 2]
         return self.classifier.predict(fft_transformed_data)[0]
