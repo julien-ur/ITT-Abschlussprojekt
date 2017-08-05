@@ -424,7 +424,6 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
-  <zorder>startScreen</zorder>
   <zorder>kiGuess</zorder>
   <zorder>team1Text</zorder>
   <zorder>team1Score</zorder>
@@ -440,9 +439,10 @@
   <zorder>label_2</zorder>
   <zorder>category</zorder>
   <zorder>label</zorder>
+  <zorder>startScreen</zorder>
+  <zorder>startButton</zorder>
   <zorder>title</zorder>
   <zorder>selectSeconds</zorder>
-  <zorder>startButton</zorder>
   <zorder>secondsSlider</zorder>
   <zorder>secondText</zorder>
  </widget>
