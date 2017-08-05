@@ -31,7 +31,7 @@
    <property name="font">
     <font>
      <family>Bitstream Charter</family>
-     <pointsize>18</pointsize>
+     <pointsize>16</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
@@ -158,7 +158,7 @@
     <string>Start Round</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="clear">
+  <widget class="QPushButton" name="undo">
    <property name="geometry">
     <rect>
      <x>830</x>
@@ -168,7 +168,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Clear Image</string>
+    <string>Undo</string>
    </property>
   </widget>
   <widget class="QLCDNumber" name="timer">
@@ -431,7 +431,7 @@
   <zorder>team2Text</zorder>
   <zorder>frame</zorder>
   <zorder>startGame</zorder>
-  <zorder>clear</zorder>
+  <zorder>undo</zorder>
   <zorder>timer</zorder>
   <zorder>endGame</zorder>
   <zorder>redTeam</zorder>

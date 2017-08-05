@@ -166,6 +166,7 @@ class Painter(QtWidgets.QMainWindow):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
         self.time = 30
+        self.exit = False
         self.winningPoints = 2
         self.currentWord = ""
         self.gameRunning = True
@@ -176,10 +177,10 @@ class Painter(QtWidgets.QMainWindow):
         self.scoreTeamTwo = 0
         self.guess = ""
         pyautogui.FAILSAFE = False
+        self.cw = ScribbleArea(self.ui.frame)
         self.initUI()
         self.image_clear_count_index = self.time
         self.image_undo_count_index = self.time
-        self.cw = ScribbleArea(self.ui.frame)
         self.show()
         self.prHelper = helper.QuickDrawHelper()
         self.trainModel = draw.ITTDrawGuesserCNN(self.prHelper.get_num_categories())
@@ -206,7 +207,7 @@ class Painter(QtWidgets.QMainWindow):
 
     # Initalize UI Elements
     def initUI(self):
-        self.ui.clear.clicked.connect(self.clearImage)
+        self.ui.undo.clicked.connect(self.cw.undo)
         self.ui.startButton.clicked.connect(self.startGaming)
         self.ui.startGame.clicked.connect(self.startNewRound)
         self.ui.endGame.clicked.connect(self.startNewGame)
@@ -234,6 +235,9 @@ class Painter(QtWidgets.QMainWindow):
 
     # Called when current game aborts or gets won/ all vars get set to start value
     def startNewGame(self):
+        self.roundWon = True
+        self.exit = True
+        self.ui.startGame.setEnabled(True)
         self.setTitleScreen()
         self.time = 60
         self.currentWord = "Term"
@@ -241,8 +245,6 @@ class Painter(QtWidgets.QMainWindow):
         self.roundRunning = False
         self.gameRunning = True
         self.currentTeam = 1
-        self.scoreTeamOne = 0
-        self.scoreTeamTwo = 0
         self.guess = ""
         self.cw.clearImage()
         self.initUI()
@@ -265,6 +267,7 @@ class Painter(QtWidgets.QMainWindow):
 
     # Is called when users presses New Round / Starts a new round
     def startNewRound(self):
+        self.exit = False
         if self.gameRunning:
             # Change icon above Team
             if self.currentTeam == 1:
@@ -286,8 +289,8 @@ class Painter(QtWidgets.QMainWindow):
             self.clearImage()
             self.ui.startGame.setEnabled(False)
             self.ui.kiGuess.setText("I think it is: %s" % self.guess)
-            t = Thread(target=self.countdown)
-            t.start()
+            self.t = Thread(target=self.countdown)
+            self.t.start()
 
     # Set new guess
     def changeGuess(self, guess):
@@ -310,9 +313,12 @@ class Painter(QtWidgets.QMainWindow):
                     self.clearImage()
 
             if not self.roundWon:
+                if self.exit:
+                    break
                 time.sleep(1)
                 self.ui.timer.display(i)
                 self.checkGuessing()
+
             else:
                 break
         self.processEndRound()
@@ -320,7 +326,7 @@ class Painter(QtWidgets.QMainWindow):
 
     # Check if team has won point
     def processEndRound(self):
-        if self.roundWon:
+        if self.roundWon and not self.exit:
             if self.currentTeam == 1:
                 self.scoreTeamOne = self.scoreTeamOne + 1
             else:
@@ -341,9 +347,14 @@ class Painter(QtWidgets.QMainWindow):
                 "Team %s has %s Points. Team %s won!" % (self.currentTeam, self.winningPoints, self.currentTeam))
             self.gameRunning = False
             self.ui.startGame.setEnabled(False)
-        self.roundRunning = False
-        self.ui.startGame.setEnabled(True)
-        self.cw.gameRuns = False
+            self.roundRunning = False
+            self.cw.gameRuns = False
+            self.roundWon = True
+
+        else:
+            self.roundRunning = False
+            self.ui.startGame.setEnabled(True)
+            self.cw.gameRuns = False
 
     # Checks if KI guessed the word
     def checkGuessing(self):
