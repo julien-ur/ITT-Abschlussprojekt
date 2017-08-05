@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="teams">
+    <file>redDot.png</file>
+    <file>blueDot.png</file>
+  </qresource>
+  <qresource prefix="background">
+    <file>table.jpg</file>
+  </qresource>
+</RCC>

@@ -5,7 +5,7 @@ import classifier.quickdraw_npy_bitmap_helper as helper
 import classifier.itt_draw_cnn as draw
 import wiimote
 import wiimote_drawing
-import images.images_rc
+import images.images
 import pyautogui
 import classifier.svm_gesture_classifier as svm_classifier
 
@@ -214,10 +214,10 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.ui.blueTeam.hide()
-        #backgroundImage = QtGui.QPixmap(':/background/paper.jpg')  # resource path starts with ':'
-        redTeamIcon = QtGui.QPixmap(':/teamDots/redDot.png')  # resource path starts with ':'
-        blueTeamIcon = QtGui.QPixmap(':/teamDots/blueDot.png')  # resource path starts with ':'
-        #self.ui.startScreen.setPixmap(backgroundImage)
+        backgroundImage = QtGui.QPixmap(':/background/table.jpg')  # resource path starts with ':'
+        redTeamIcon = QtGui.QPixmap(':/teams/redDot.png')  # resource path starts with ':'
+        blueTeamIcon = QtGui.QPixmap(':/teams/blueDot.png')  # resource path starts with ':'
+        self.ui.startScreen.setPixmap(backgroundImage)
         self.ui.redTeam.setPixmap(redTeamIcon)
         self.ui.blueTeam.setPixmap(blueTeamIcon)
 

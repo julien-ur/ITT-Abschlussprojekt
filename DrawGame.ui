@@ -22,10 +22,10 @@
   <widget class="QLabel" name="kiGuess">
    <property name="geometry">
     <rect>
-     <x>500</x>
-     <y>50</y>
-     <width>261</width>
-     <height>71</height>
+     <x>370</x>
+     <y>110</y>
+     <width>421</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="font">
@@ -52,7 +52,7 @@
      <x>370</x>
      <y>20</y>
      <width>151</width>
-     <height>50</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="font">
@@ -71,7 +71,7 @@
    <property name="geometry">
     <rect>
      <x>320</x>
-     <y>60</y>
+     <y>50</y>
      <width>151</width>
      <height>51</height>
     </rect>
@@ -84,7 +84,7 @@
    <property name="geometry">
     <rect>
      <x>650</x>
-     <y>60</y>
+     <y>50</y>
      <width>141</width>
      <height>51</height>
     </rect>
@@ -99,7 +99,7 @@
      <x>610</x>
      <y>20</y>
      <width>311</width>
-     <height>50</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="font">
@@ -314,7 +314,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../../Desktop/table.jpg</pixmap>
+    <pixmap resource="images/images.qrc">:/background/table.jpg</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -333,7 +333,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>:/teamDots/redDot.png</pixmap>
+    <pixmap resource="images/images.qrc">:/teams/redDot.png</pixmap>
    </property>
   </widget>
   <widget class="QLabel" name="blueTeam">
@@ -349,7 +349,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>:/teamDots/blueDot.png</pixmap>
+    <pixmap resource="images/images.qrc">:/teams/blueDot.png</pixmap>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -424,6 +424,7 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <zorder>startScreen</zorder>
   <zorder>kiGuess</zorder>
   <zorder>team1Text</zorder>
   <zorder>team1Score</zorder>
@@ -439,7 +440,6 @@
   <zorder>label_2</zorder>
   <zorder>category</zorder>
   <zorder>label</zorder>
-  <zorder>startScreen</zorder>
   <zorder>title</zorder>
   <zorder>selectSeconds</zorder>
   <zorder>startButton</zorder>
