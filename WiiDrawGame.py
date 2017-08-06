@@ -201,9 +201,12 @@ class Painter(QtWidgets.QMainWindow):
             else:
                 el.setGeometry(QtCore.QRect(el.x()*self.scaleFactorWidth,el.y()*self.scaleFactorHeight, el.width()*self.scaleFactorWidth, el.height()*self.scaleFactorHeight ))
 
-        #wiimote.buttons.register_callback(self.buttonEvents)
-        #wiiDraw.register_callback(self.setMousePos)
-        #wiiDraw.start_processing()
+        try:
+            wiimote.buttons.register_callback(self.buttonEvents)
+            wiiDraw.register_callback(self.setMousePos)
+            wiiDraw.start_processing()
+        except:
+            print(sys.exc_info()[0])
 
     # Initalize UI Elements
     def initUI(self):
@@ -375,7 +378,6 @@ class Painter(QtWidgets.QMainWindow):
             return
         QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
         end = time.time()
-        print(end - start)
 
     # Button events for the Wiimote. Used PyAutoGui for interaction with app (link to pyautogui)
     def buttonEvents(self, report):
@@ -412,9 +414,13 @@ def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    #wiimote = connect_wiimote()
-    #wiiDraw = wiimote_drawing.init(wiimote)
-    paint = Painter(None, None)
+    wiiMote, wiiDraw = None, None
+
+    if len(sys.argv) > 1:
+        wiiMote = connect_wiimote(sys.argv[1])
+        wiiDraw = wiimote_drawing.init(wiiMote)
+
+    paint = Painter(wiiMote, wiiDraw)
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
