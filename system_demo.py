@@ -1,6 +1,7 @@
-import sys, random, sched, time, copy
+import sys
+import random
+import time
 from threading import Thread
-import numpy as np
 import classifier.quickdraw_npy_bitmap_helper as helper
 import classifier.itt_draw_cnn as draw
 import wiimote
@@ -8,30 +9,26 @@ import wiimote_drawing
 import images.images
 import pyautogui
 import classifier.svm_gesture_classifier as svm_classifier
-
-from PyQt5 import uic, QtWidgets, QtCore, QtGui, QtPrintSupport, Qt, QtTest
+from PyQt5 import uic, QtWidgets, QtCore, QtGui
 from PyQt5.QtGui import qRgb
-
 import qimage2ndarray
 
-p1 = QtCore.QPoint(0, 0)
-p2 = QtCore.QPoint(400, 400)
 
-words = []
 # Reduced Categories for Testing
 words = [line.rstrip('\n') for line in open('categories.txt')]
+
 
 # Source: https://github.com/baoboa/pyqt5/blob/master/examples/widgets/scribble.py
 # Used the scribble.py example as basis for the drawing area. The saveImage function was overwritten with the creation
 # of the qimage2ndarray. For this, we are using the python extension: https://github.com/hmeine/qimage2ndarray
 
-class ScribbleArea(QtWidgets.QWidget):
 
+class ScribbleArea(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(ScribbleArea, self).__init__(parent)
         self.scribbling = False
-        self.myPenWidth = 3
-        self.myPenColor = QtCore.Qt.white
+        self.penWidth = 3
+        self.penColor = QtCore.Qt.white
         self.image = QtGui.QImage()
         self.lastPoint = QtCore.QPoint()
 
@@ -43,40 +40,40 @@ class ScribbleArea(QtWidgets.QWidget):
         self.drawing.append([])
         self.currentSegmentIndex = 1
 
+    # undo function: segmentIndex gets reduced by one
     def undo(self):
         self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
 
         if len(self.drawing[self.currentSegmentIndex]) == 0:
             self.currentSegmentIndex = max(0, self.currentSegmentIndex - 1)
 
-        self.drawImage()
+        self.draw_image()
 
-    def resizeCanvas(self, height, width):
+    def resize_canvas(self, height, width):
         self.setMinimumHeight(height)
         self.setMinimumWidth(width)
         self.update()
 
     def redo(self):
         self.currentSegmentIndex = self.currentSegmentIndex + 1
-        self.drawImage()
+        self.draw_image()
 
-    def setStartPoint(self, startPoint):
-        self.lastPoint = startPoint
+    def set_start_point(self, start_point):
+        self.lastPoint = start_point
 
-    def clearImage(self):
-        self.image.fill(QtGui.qRgb(0, 0, 0))
+    def clear_image(self):
         self.drawing = []
         self.drawing.append([])
         self.drawing.append([])
         self.currentSegmentIndex = 1
-        self.update()
+        self.reset_canvas()
 
-    def resetCanvas(self):
+    def reset_canvas(self):
         self.image.fill(QtGui.qRgb(0, 0, 0))
         self.update()
 
     # Save current canvas to an ndarray (https://github.com/hmeine/qimage2ndarray)
-    def saveImage(self):
+    def save_image(self):
         v = qimage2ndarray.rgb_view(self.image)
         return v
 
@@ -88,86 +85,84 @@ class ScribbleArea(QtWidgets.QWidget):
     def mouseMoveEvent(self, event):
         if (event.buttons() & QtCore.Qt.LeftButton) and self.scribbling:
             if self.gameRuns:
-                self.updateDrawing(event.pos())
+                self.update_drawing(event.pos())
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and self.scribbling:
             if self.gameRuns:
-                self.updateDrawing(event.pos())
+                self.update_drawing(event.pos())
                 self.scribbling = False
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
-        dirtyRect = event.rect()
-        painter.drawImage(dirtyRect, self.image, dirtyRect)
+        paint_rect = event.rect()
+        painter.drawImage(paint_rect, self.image, paint_rect)
 
     def resizeEvent(self, event):
         if self.width() > self.image.width() or self.height() > self.image.height():
-            newWidth = max(self.width() + 128, self.image.width())
-            newHeight = max(self.height() + 128, self.image.height())
-            self.resizeImage(self.image, QtCore.QSize(newWidth, newHeight))
+            new_width = max(self.width() + 128, self.image.width())
+            new_height = max(self.height() + 128, self.image.height())
+            self.resize_image(self.image, QtCore.QSize(new_width, new_height))
             self.update()
 
         super(ScribbleArea, self).resizeEvent(event)
 
-    # Called when undo function is executed / Draw new Image based in segment index
-    def drawImage(self):
-        self.resetCanvas()
-        for lineSegment in self.drawing[:self.currentSegmentIndex+1]:
+    # Called when undo function is executed / Draw new Image based on segment index
+    def draw_image(self):
+        self.reset_canvas()
+        for lineSegment in self.drawing[:self.currentSegmentIndex + 1]:
             for line in lineSegment:
                 if line:
                     self.lastPoint = line.p1()
-                    self.drawLineTo(line.p2())
+                    self.draw_line_to(line.p2())
         self.update()
 
     # Called when mouse moves and the press is released / Draw new lines
-    def updateDrawing(self, p):
-        if self.currentSegmentIndex < len(self.drawing)-1:
+    def update_drawing(self, p):
+        if self.currentSegmentIndex < len(self.drawing) - 1:
             self.currentSegmentIndex = self.currentSegmentIndex + 1
-            self.drawing = self.drawing[:self.currentSegmentIndex+1]
+            self.drawing = self.drawing[:self.currentSegmentIndex + 1]
             self.drawing[self.currentSegmentIndex] = []
-        self.drawLineTo(p)
+        self.draw_line_to(p)
         self.update()
         self.drawing[self.currentSegmentIndex].append(self.line)
 
     # Draws line between to points
-    def drawLineTo(self, endPoint):
+    def draw_line_to(self, end_point):
         painter = QtGui.QPainter(self.image)
-        painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth, QtCore.Qt.SolidLine,
-                QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
-        self.line = QtCore.QLine(self.lastPoint, endPoint)
+        painter.setPen(QtGui.QPen(self.penColor, self.penWidth, QtCore.Qt.SolidLine,
+                                  QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
+        self.line = QtCore.QLine(self.lastPoint, end_point)
         painter.drawLine(self.line)
-        rad = self.myPenWidth / 2 + 2
-        #self.update(QtCore.QRect(self.lastPoint, endPoint).normalized().adjusted(-rad, -rad, +rad, +rad))
-        self.lastPoint = QtCore.QPoint(endPoint)
+        self.lastPoint = QtCore.QPoint(end_point)
 
-    def resizeImage(self, image, newSize):
-        if image.size() == newSize:
+    def resize_image(self, image, new_size):
+        if image.size() == new_size:
             return
 
-        newImage = QtGui.QImage(newSize, QtGui.QImage.Format_RGB32)
-        newImage.fill(qRgb(0, 0, 0))
-        painter = QtGui.QPainter(newImage)
+        new_image = QtGui.QImage(new_size, QtGui.QImage.Format_RGB32)
+        new_image.fill(qRgb(0, 0, 0))
+        painter = QtGui.QPainter(new_image)
         painter.drawImage(QtCore.QPoint(0, 0), image)
-        self.image = newImage
+        self.image = new_image
         self.update()
 
-    # Add new segment to undo stack
-    def addSegment(self):
-        if self.currentSegmentIndex < len(self.drawing)-1:
+    # Add new segment to undo list
+    def add_segment(self):
+        if self.currentSegmentIndex < len(self.drawing) - 1:
             return
         if len(self.drawing[self.currentSegmentIndex]) == 0:
             return
         self.drawing.append([])
-        self.currentSegmentIndex = len(self.drawing)-1
+        self.currentSegmentIndex = len(self.drawing) - 1
+
 
 class Painter(QtWidgets.QMainWindow):
-    def __init__(self, wiimote, wiiDraw):
+    def __init__(self, wiimote, wiidraw):
         super(Painter, self).__init__()
         self.ui = uic.loadUi("DrawGame.ui", self)
         self.time = 30
-        self.exit = False
-        self.winningPoints = 2
+        self.winningPoints = 3
         self.currentWord = ""
         self.gameRunning = True
         self.roundWon = False
@@ -176,9 +171,10 @@ class Painter(QtWidgets.QMainWindow):
         self.scoreTeamOne = 0
         self.scoreTeamTwo = 0
         self.guess = ""
+        self.t = Thread(target=self.countdown)
         pyautogui.FAILSAFE = False
         self.cw = ScribbleArea(self.ui.frame)
-        self.initUI()
+        self.init_ui()
         self.image_clear_count_index = self.time
         self.image_undo_count_index = self.time
         self.show()
@@ -190,43 +186,45 @@ class Painter(QtWidgets.QMainWindow):
         self.showFullScreen()
         screen = QtWidgets.QDesktopWidget().screenGeometry()
         self.backgroundSize = self.ui.startScreen.size()
-        self.scaleFactorWidth = screen.width()/self.backgroundSize.width()
-        self.scaleFactorHeight = screen.height()/self.backgroundSize.height()
-        self.cw.resizeCanvas(self.ui.frame.height()*self.scaleFactorHeight, self.ui.frame.width()*self.scaleFactorWidth)
+        self.scaleFactorWidth = screen.width() / self.backgroundSize.width()
+        self.scaleFactorHeight = screen.height() / self.backgroundSize.height()
+        self.cw.resize_canvas(self.ui.frame.height() * self.scaleFactorHeight,
+                              self.ui.frame.width() * self.scaleFactorWidth)
         self.uiElements = self.ui.children()
 
         for el in self.uiElements:
             if isinstance(el, QtWidgets.QLayout):
                 continue
             else:
-                el.setGeometry(QtCore.QRect(el.x()*self.scaleFactorWidth,el.y()*self.scaleFactorHeight, el.width()*self.scaleFactorWidth, el.height()*self.scaleFactorHeight ))
+                el.setGeometry(QtCore.QRect(el.x() * self.scaleFactorWidth, el.y() * self.scaleFactorHeight,
+                                            el.width() * self.scaleFactorWidth, el.height() * self.scaleFactorHeight))
 
         try:
             wiimote.buttons.register_callback(self.buttonEvents)
-            wiiDraw.register_callback(self.setMousePos)
-            wiiDraw.start_processing()
+            wiidraw.register_callback(self.setMousePos)
+            wiidraw.start_processing()
         except:
             print(sys.exc_info()[0])
 
     # Initalize UI Elements
-    def initUI(self):
+    def init_ui(self):
         self.ui.undo.clicked.connect(self.cw.undo)
-        self.ui.startButton.clicked.connect(self.startGaming)
-        self.ui.startGame.clicked.connect(self.startNewRound)
-        self.ui.endGame.clicked.connect(self.startNewGame)
+        self.ui.startButton.clicked.connect(self.start_gaming)
+        self.ui.startGame.clicked.connect(self.start_new_round)
+        self.ui.endGame.clicked.connect(self.start_new_game)
         self.ui.timer.display(self.time)
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.ui.blueTeam.hide()
-        backgroundImage = QtGui.QPixmap(':/background/table.jpg')  # resource path starts with ':'
-        redTeamIcon = QtGui.QPixmap(':/teams/redDot.png')  # resource path starts with ':'
-        blueTeamIcon = QtGui.QPixmap(':/teams/blueDot.png')  # resource path starts with ':'
-        self.ui.startScreen.setPixmap(backgroundImage)
-        self.ui.redTeam.setPixmap(redTeamIcon)
-        self.ui.blueTeam.setPixmap(blueTeamIcon)
+        background_image = QtGui.QPixmap(':/background/table.jpg')  # resource path starts with ':'
+        red_team_icon = QtGui.QPixmap(':/teams/redDot.png')  # resource path starts with ':'
+        blue_team_icon = QtGui.QPixmap(':/teams/blueDot.png')  # resource path starts with ':'
+        self.ui.startScreen.setPixmap(background_image)
+        self.ui.redTeam.setPixmap(red_team_icon)
+        self.ui.blueTeam.setPixmap(blue_team_icon)
 
     # Hide title screen elements
-    def startGaming(self):
+    def start_gaming(self):
         self.ui.title.hide()
         self.ui.startButton.hide()
         self.ui.startScreen.lower()
@@ -237,23 +235,27 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.secondsSlider.hide()
 
     # Called when current game aborts or gets won/ all vars get set to start value
-    def startNewGame(self):
+    def start_new_game(self):
         self.roundWon = True
-        self.exit = True
         self.ui.startGame.setEnabled(True)
-        self.setTitleScreen()
+        self.set_title_screen()
         self.time = 60
-        self.currentWord = "Term"
+        self.currentWord = ""
+        self.scoreTeamOne = 0
+        self.scoreTeamTwo = 0
+        self.ui.team1Score.display(self.scoreTeamOne)
+        self.ui.team2Score.display(self.scoreTeamTwo)
+        self.ui.category.setText(self.currentWord)
         self.roundWon = False
         self.roundRunning = False
         self.gameRunning = True
         self.currentTeam = 1
         self.guess = ""
-        self.cw.clearImage()
-        self.initUI()
+        self.cw.clear_image()
+        self.ui.blueTeam.hide()
 
     # Used to bring all title screen elements to the top
-    def setTitleScreen(self):
+    def set_title_screen(self):
         self.ui.startScreen.raise_()
         self.ui.title.show()
         self.ui.title.raise_()
@@ -269,8 +271,7 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.category.setText(self.currentWord)
 
     # Is called when users presses New Round / Starts a new round
-    def startNewRound(self):
-        self.exit = False
+    def start_new_round(self):
         if self.gameRunning:
             # Change icon above Team
             if self.currentTeam == 1:
@@ -289,62 +290,62 @@ class Painter(QtWidgets.QMainWindow):
             self.guess = ""
             self.ui.timer.display(self.time)
             self.ui.category.setText(self.currentWord)
-            self.clearImage()
+            self.clear_image()
             self.ui.startGame.setEnabled(False)
             self.ui.kiGuess.setText("I think it is: %s" % self.guess)
             self.t = Thread(target=self.countdown)
             self.t.start()
 
     # Set new guess
-    def changeGuess(self, guess):
+    def change_guess(self, guess):
         self.guess = guess
         self.ui.kiGuess.setText("I think it is: %s" % self.guess)
 
     # Handles what happens in the Countdown Thread
     def countdown(self):
-        x = self.time-1
+        x = self.time - 1
         for i in range(x, -1, -1):
-            if i%3 == 0:
-                currentImage = self.cw.saveImage()
-                self.changeGuess(self.prHelper.get_label(self.trainModel.predict(currentImage)))
-            if i%2 == 0:
-                self.cw.addSegment()
-            if i%1 == 0:
+            if i % 3 == 0:
+                current_image = self.cw.save_image()
+                self.change_guess(self.prHelper.get_label(self.trainModel.predict(current_image)))
+            if i % 2 == 0:
+                self.cw.add_segment()
+            if i % 1 == 0:
                 gesture = self.svm.predict()
                 if gesture == 1 and abs(self.image_clear_count_index - i) >= 1:
                     self.image_clear_count_index = i
-                    self.clearImage()
+                    self.clear_image()
 
             if not self.roundWon:
-                if self.exit:
-                    break
                 time.sleep(1)
                 self.ui.timer.display(i)
-                self.checkGuessing()
+                self.check_guessing()
 
             else:
                 break
-        self.processEndRound()
-        print("Round End")
+        self.process_end_round()
 
     # Check if team has won point
-    def processEndRound(self):
-        if self.roundWon and not self.exit:
+    def process_end_round(self):
+        if self.roundWon:
             if self.currentTeam == 1:
                 self.scoreTeamOne = self.scoreTeamOne + 1
+                print(self.scoreTeamOne)
+
             else:
                 self.scoreTeamTwo = self.scoreTeamTwo + 1
-            self.ui.kiGuess.setText("Oh i know, the Word is: %s. Team %s gets 1 Point!" % (self.guess, self.currentTeam))
-
+            self.ui.kiGuess.setText(
+                "Oh i know, the Word is: %s. Team %s gets 1 Point!" % (self.guess, self.currentTeam))
         else:
             self.ui.kiGuess.setText("Sorry, i couldn't guess the word!")
 
+        print(self.scoreTeamOne)
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
-        self.checkGameEnd()
+        self.check_game_end()
 
     # Check if game is won
-    def checkGameEnd(self):
+    def check_game_end(self):
         if (self.scoreTeamOne == self.winningPoints) or (self.scoreTeamTwo == self.winningPoints):
             self.ui.kiGuess.setText(
                 "Team %s has %s Points. Team %s won!" % (self.currentTeam, self.winningPoints, self.currentTeam))
@@ -360,27 +361,25 @@ class Painter(QtWidgets.QMainWindow):
             self.cw.gameRuns = False
 
     # Checks if KI guessed the word
-    def checkGuessing(self):
+    def check_guessing(self):
         if self.guess == self.currentWord:
             self.roundWon = True
 
     # Delete whole image
-    def clearImage(self):
-        self.cw.clearImage()
+    def clear_image(self):
+        self.cw.clear_image()
 
     # Set new cursor pos to a new pos
-    def setMousePos(self, pos, acc):
-        start = time.time()
+    def set_mouse_pos(self, pos, acc):
         x, y, z = acc
         self.svm.update_buffer(x, y, z)
 
-        if pos == None:
+        if pos is None:
             return
         QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
-        end = time.time()
 
     # Button events for the Wiimote. Used PyAutoGui for interaction with app (link to pyautogui)
-    def buttonEvents(self, report):
+    def button_events(self, report):
         for button in report:
             if button[0] == "A" and not button[1]:
                 self.cw.undo()
@@ -388,6 +387,7 @@ class Painter(QtWidgets.QMainWindow):
                 pyautogui.mouseDown(button="left")
             elif button[0] == "B" and not button[1]:
                 pyautogui.mouseUp(button="left")
+
 
 # Establish connection to Wiimote
 def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
@@ -411,17 +411,17 @@ def connect_wiimote(btaddr="18:2a:7b:f4:bc:65", attempt=0):
         return None
 
 
-
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    wiiMote, wiiDraw = None, None
+    wiimote, wiidraw = None, None
 
     if len(sys.argv) > 1:
-        wiiMote = connect_wiimote(sys.argv[1])
-        wiiDraw = wiimote_drawing.init(wiiMote)
+        wiimote = connect_wiimote(sys.argv[1])
+        wiidraw = wiimote_drawing.init(wiimote)
 
-    paint = Painter(wiiMote, wiiDraw)
+    paint = Painter(wiimote, wiidraw)
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
