@@ -4,6 +4,7 @@
 - pyautogui
     - see https://pyautogui.readthedocs.io/en/latest/install.html for dependencies
 - PyQt5
+- qimage2ndarray
 - numpy+mkl
 - scipy
 - PIL

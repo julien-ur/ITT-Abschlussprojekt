@@ -16,15 +16,15 @@ class SimpleGestureRecognizer:
         self.classifier = svm.SVC()
         self.input_buffer = np.array([])
 
-    def train_classifier(self, training_data, categories):
-        self.classifier.fit(training_data, categories)
+    def train_classifier(self, training_data, gesture_categories):
+        self.classifier.fit(training_data, gesture_categories)
 
     # Fourier transform on data, classify
     def predict(self):
 
         if len(self.input_buffer) < self.MAX_BUFFER_SIZE:
             print("Buffer not full, prediction may be faulty")
-            return self.LABEL_DICT.get('trash')
+            return self.LABEL_DICT[2]
 
         fft_transformed_data = np.abs(fft(self.input_buffer) / len(self.input_buffer))[1:len(self.input_buffer) // 2]
         return self.classifier.predict(fft_transformed_data)[0]
@@ -68,8 +68,6 @@ if __name__ == "__main__":
                         categories.append(1)
                     else:
                         categories.append(2)
-
-
 
         svm_recognizer = SimpleGestureRecognizer()
         svm_recognizer.train_classifier(training_set, categories)

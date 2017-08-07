@@ -16,34 +16,33 @@ class QuickDrawHelper:
         dict_file = open(self.DICT_FILEPATH, 'r').read()
         self.label_dict = eval(dict_file)
 
-
-
     # Load data set from filepath
     # Should be folder with npy files
     # returns dict with x, y, x_test, y_test lists
     # x: bitmap arrays
     # y: category list
-    def load_data_set(self, folder_path):
+    def load_data_set(self, data_folder_path):
         cat_id = 0
         x = []
         y = []
         x_test = []
         y_test = []
         try:
-            training_file_names = sorted(os.listdir(folder_path))
-            for file in training_file_names:
-                if file.endswith('.npy'):
-                    npy_path = os.path.join(folder_path, file)
+            training_file_names = sorted(os.listdir(data_folder_path))
+            for data_file in training_file_names:
+                if data_file.endswith('.npy'):
+                    npy_path = os.path.join(data_folder_path, data_file)
                     loaded_bitmap_arrays = np.load(npy_path)
-                    # data_training, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays, cat_id)
+                    # data_training, cat, data_test, cat_test = self.get_data_from_bitmap_arrays(loaded_bitmap_arrays,
+                    #                                                                            cat_id)
                     data_training = loaded_bitmap_arrays
                     cat = [cat_id]*len(data_training)
                     x.extend(data_training)
                     y.extend(cat)
-                    #x_test.extend(data_test)
-                    #y_test.extend(cat_test)
-                    self.label_dict[cat_id] = file[:-4].replace('full_numpy_bitmap_', '')
-                    print("loading file %s", file)
+                    # x_test.extend(data_test)
+                    # y_test.extend(cat_test)
+                    self.label_dict[cat_id] = data_file[:-4].replace('full_numpy_bitmap_', '')
+                    print("loading file %s", data_file)
                     cat_id += 1
         except FileNotFoundError:
             print("File not found")
@@ -65,8 +64,8 @@ class QuickDrawHelper:
         return array.reshape([-1, 28, 28, 1])
 
     def load_from_file(self, path):
-        data = np.load(path)
-        return data
+        bitmap_data = np.load(path)
+        return bitmap_data
 
     # Classifier_output: returned list from ITTDrawGuesserCNN.predict()
     # Hacky reading of categories to use for prediction label, using eval on file-dumped dict

@@ -59,7 +59,6 @@ draw_game_model_5: 90% training images per category, epoch = 10, boost_non_black
 Final used model: draw_game_model_4.
 '''
 
-
 import tflearn
 import tensorflow as tf
 import os
@@ -157,7 +156,7 @@ class ITTDrawGuesserCNN:
     # normalize pixel values to range between 0 and 1
     # reshape input arrays into 28x28x1 array, as needed for input
     def _reshape_images(self, array):
-        array = array/255
+        array = array / 255
         return array.reshape([-1, 28, 28, 1])
 
     # Set custom checkpoint filepath
@@ -205,10 +204,10 @@ class ITTDrawGuesserCNN:
 
     # Normalize input image array to 28x28 grayscale
     def normalize_data(self, image_data):
-        if image_data.shape == (self.training_image_size[0]*self.training_image_size[1],):
+        if image_data.shape == (self.training_image_size[0] * self.training_image_size[1],):
             return image_data
         else:
-            #image_data = np.array(image_data.tolist())
+            # image_data = np.array(image_data.tolist())
             image = Image.fromarray(image_data, 'RGB')
             image.save('raw.png')
             image = image.convert('L')
