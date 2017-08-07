@@ -3,8 +3,6 @@ import os
 import sys
 from PIL import Image
 
-# https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/numpy_bitmap/?pli=1
-
 
 # Helper class with functions for the quickdraw npy data
 class QuickDrawHelper:
@@ -26,7 +24,6 @@ class QuickDrawHelper:
     # x: bitmap arrays
     # y: category list
     def load_data_set(self, folder_path):
-        # todo: walk filepath and get data from all npy files
         cat_id = 0
         x = []
         y = []
@@ -97,6 +94,7 @@ class QuickDrawHelper:
         return data_train, cat_list, data_test, cat_list_test
 
 # Create png to look at the images/process them elsewhere
+# No use in actual application
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("No folder given")

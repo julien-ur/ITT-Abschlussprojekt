@@ -39,4 +39,4 @@ model_generator.py also describes various setups for the neural network that wer
 with corresponding results.
 
 Adjusting values, layers, activation functions etc. of the neural network can be done in itt_draw_cnn.py.
-Out-commented layers document earlier tries in creating a model.
+Comments describe used data, layers and configurations.

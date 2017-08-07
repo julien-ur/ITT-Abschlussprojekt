@@ -19,6 +19,7 @@ class SimpleGestureRecognizer:
     def train_classifier(self, training_data, categories):
         self.classifier.fit(training_data, categories)
 
+    # Fourier transform on data, classify
     def predict(self):
 
         if len(self.input_buffer) < self.MAX_BUFFER_SIZE:
@@ -39,6 +40,8 @@ class SimpleGestureRecognizer:
         self.input_buffer = self.input_buffer[-self.MAX_BUFFER_SIZE:]
 
 
+# Takes folder path of training data, save path of resulting model
+# Trains and saves the model
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("No files given. Files with fourier transformed list values needed.\n"
