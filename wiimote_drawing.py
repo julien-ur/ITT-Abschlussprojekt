@@ -3,11 +3,13 @@ import pylab as pl
 import scipy
 import sys
 import time
-from threading import Timer,Thread,Event
+from threading import Timer, Thread, Event
 import math
+
 
 def init(wiimote):
     return WiimoteDrawing(wiimote)
+
 
 # Source: https://stackoverflow.com/a/12435256
 class ProcessingThread(Thread):
@@ -26,6 +28,7 @@ class ProcessingThread(Thread):
             end = time.time()
             sleep_time = (1 / self.update_rate) - (end - start)
             self.sleep_time = max(0, sleep_time)
+
 
 class WiimoteDrawing:
     def __init__(self, wiimote):
@@ -124,7 +127,7 @@ class WiimoteDrawing:
         x_accel_norm = 0.5 - (x_accel - _min_accel) / (_max_accel - _min_accel)
         z_accel_norm = 0.5 - (z_accel - _min_accel) / (_max_accel - _min_accel)
 
-        ###print('{:2f}'.format(x_accel_norm), '{:2f}'.format(z_accel_norm))
+        # print('{:2f}'.format(x_accel_norm), '{:2f}'.format(z_accel_norm))
 
         ir_points = []
         for i in range(len(self._ir_data)):
@@ -147,8 +150,8 @@ class WiimoteDrawing:
         x_list_unordered, y_list_unordered = [], []
         xmin_point, xmax_point, ymin_point, ymax_point = [(-1, -1) for p in range(4)]
 
-        #ir_points = [(582, 477), (947, 311), (507, 314), (841, 143)]
-        #print("raw", ir_points)
+        # ir_points = [(582, 477), (947, 311), (507, 314), (841, 143)]
+        # print("raw", ir_points)
 
         for i in range(len(ir_points)):
             p = ir_points[i]
@@ -179,13 +182,15 @@ class WiimoteDrawing:
         elif quadrant_num == 1:
             sorted_tracking_points = [xmin_point, ymin_point, xmax_point, ymax_point]
 
-        #print("sorted", sorted_tracking_points)
+        # print("sorted", sorted_tracking_points)
 
-        sorted_tracking_points = self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered)
+        sorted_tracking_points = self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num,
+                                                            x_list_unordered, y_list_unordered)
 
         return sorted_tracking_points
 
-    def remove_sorting_errors(self, sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered, recursion_counter=0):
+    def remove_sorting_errors(self, sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered,
+                              recursion_counter=0):
         x_list_asc = sorted(x_list_unordered)
         y_list_asc = sorted(y_list_unordered)
 
@@ -204,8 +209,8 @@ class WiimoteDrawing:
             lowest_avoidance_rating = 1000
 
             if len(indices) > 2:
-                #print("more than 2 boundary values are identical. " +
-                     # "that shouldn't happen, something's terrible wrong here :(")
+                # print("more than 2 boundary values are identical. " +
+                # "that shouldn't happen, something's terrible wrong here :(")
                 return
 
             for i in indices:
@@ -223,21 +228,23 @@ class WiimoteDrawing:
             order_axis = point_order_dict_list[quadrant_num][faulty_point_index][0]
             boundary_type = point_order_dict_list[quadrant_num][faulty_point_index][1]
             search_list = x_list_asc if (order_axis == "x") else y_list_asc
-            closest_similar_value = search_list[1] if (boundary_type == "min") else search_list[len(sorted_tracking_points) - 2]
-            #print(faulty_point)
-            #print(order_axis, boundary_type)
-            #print(closest_similar_value)
+            closest_similar_value = search_list[1] if (boundary_type == "min") else \
+                search_list[len(sorted_tracking_points) - 2]
+            # print(faulty_point)
+            # print(order_axis, boundary_type)
+            # print(closest_similar_value)
 
             for p in ir_points:
                 order_axis_val = p[0] if (order_axis == "x") else p[1]
                 if order_axis_val == closest_similar_value:
                     sorted_tracking_points[faulty_point_index] = p
-                    #print("corrected", sorted_tracking_points)
+                    # print("corrected", sorted_tracking_points)
 
         duplicate_points = self.list_duplicates(sorted_tracking_points)
 
         if len(duplicate_points) > 0 and recursion_counter < 4:
-            self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num, x_list_unordered, y_list_unordered, recursion_counter + 1)
+            self.remove_sorting_errors(sorted_tracking_points, ir_points, quadrant_num, x_list_unordered,
+                                       y_list_unordered, recursion_counter + 1)
 
         return sorted_tracking_points
 
@@ -324,5 +331,5 @@ class WiimoteDrawing:
 
         y = self.DEST_H - y
 
-        #print("drawing point", x, y)
+        # print("drawing point", x, y)
         return x, y
