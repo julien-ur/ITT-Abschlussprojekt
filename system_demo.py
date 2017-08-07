@@ -330,7 +330,6 @@ class Painter(QtWidgets.QMainWindow):
         if self.roundWon:
             if self.currentTeam == 1:
                 self.scoreTeamOne = self.scoreTeamOne + 1
-                print(self.scoreTeamOne)
 
             else:
                 self.scoreTeamTwo = self.scoreTeamTwo + 1
@@ -339,7 +338,6 @@ class Painter(QtWidgets.QMainWindow):
         else:
             self.ui.kiGuess.setText("Sorry, i couldn't guess the word!")
 
-        print(self.scoreTeamOne)
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.check_game_end()

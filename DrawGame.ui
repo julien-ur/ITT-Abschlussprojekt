@@ -237,6 +237,9 @@
      <pointsize>10</pointsize>
     </font>
    </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
    <property name="styleSheet">
     <string notr="true"/>
    </property>
