@@ -14,9 +14,7 @@ from PyQt5.QtGui import qRgb
 import qimage2ndarray
 
 
-# Reduced Categories for Testing
 words = [line.rstrip('\n') for line in open('categories.txt')]
-
 
 # Source: https://github.com/baoboa/pyqt5/blob/master/examples/widgets/scribble.py
 # Used the scribble.py example as basis for the drawing area. The saveImage function was overwritten with the creation
@@ -171,7 +169,6 @@ class Painter(QtWidgets.QMainWindow):
         self.scoreTeamOne = 0
         self.scoreTeamTwo = 0
         self.guess = ""
-        self.t = Thread(target=self.countdown)
         pyautogui.FAILSAFE = False
         self.cw = ScribbleArea(self.ui.frame)
         self.init_ui()
@@ -246,11 +243,12 @@ class Painter(QtWidgets.QMainWindow):
         self.ui.team1Score.display(self.scoreTeamOne)
         self.ui.team2Score.display(self.scoreTeamTwo)
         self.ui.category.setText(self.currentWord)
+        self.guess = ""
+        self.ui.kiGuess.setText("I think it is: %s" % self.guess)
         self.roundWon = False
         self.roundRunning = False
         self.gameRunning = True
         self.currentTeam = 1
-        self.guess = ""
         self.cw.clear_image()
         self.ui.blueTeam.hide()
 
@@ -308,8 +306,10 @@ class Painter(QtWidgets.QMainWindow):
             if i % 3 == 0:
                 current_image = self.cw.save_image()
                 self.change_guess(self.prHelper.get_label(self.trainModel.predict(current_image)))
+
             if i % 2 == 0:
                 self.cw.add_segment()
+
             if i % 1 == 0:
                 gesture = self.svm.predict()
                 if gesture == 1 and abs(self.image_clear_count_index - i) >= 1:
@@ -330,7 +330,6 @@ class Painter(QtWidgets.QMainWindow):
         if self.roundWon:
             if self.currentTeam == 1:
                 self.scoreTeamOne = self.scoreTeamOne + 1
-
             else:
                 self.scoreTeamTwo = self.scoreTeamTwo + 1
             self.ui.kiGuess.setText(
@@ -376,7 +375,8 @@ class Painter(QtWidgets.QMainWindow):
             return
         QtGui.QCursor.setPos(self.mapToGlobal(QtCore.QPoint(pos[0], pos[1])))
 
-    # Button events for the Wiimote. Used PyAutoGui for interaction with app (link to pyautogui)
+    # Button events for the Wiimote. Used PyAutoGui for interaction with app
+    #  (https://pyautogui.readthedocs.io/en/latest/)
     def button_events(self, report):
         for button in report:
             if button[0] == "A" and not button[1]:
